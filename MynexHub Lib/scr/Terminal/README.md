@@ -1,6 +1,6 @@
 # MYNEX LIB TERMINAL ( MODE BY ECO HUB )
 ```
-local terminal = loadstring(game:HttpGet("https://pastebin.com/raw/z3uYzH0Q"))()
+local terminal = loadstring(game:HttpGet("https://raw.githubusercontent.com/EcohubPassouAqui/MynexHub/refs/heads/main/MynexHub%20Lib/scr/Terminal/Terminal.luau"))()
 
 terminal.custom_print({
     message = "Sistema iniciado com sucesso",
