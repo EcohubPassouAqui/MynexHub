@@ -1,39 +1,3 @@
--- Anti-Detection System
-local v_u_1, v_u_2, v_u_3, v_u_4, v_u_5, v_u_6, v_u_7, v_u_8, v_u_9, v_u_10
-local v_u_11, v_u_12, v_u_13, v_u_14, v_u_15, v_u_16, v_u_17, v_u_18
-
-do
-	local v_u_mt = getrawmetatable(game)
-	local v_u_nc = v_u_mt.__namecall
-	local v_u_ni = v_u_mt.__index
-
-	setreadonly(v_u_mt, false)
-
-	v_u_mt.__namecall = newcclosure(function(...)
-		local v_u_args   = {...}
-		local v_u_self   = v_u_args[1]
-		local v_u_method = getnamecallmethod()
-
-		if v_u_method == "Kick" or v_u_method == "kick" then
-			return
-		end
-
-		if v_u_method == "FireServer" or v_u_method == "InvokeServer" then
-			if tostring(v_u_self):find("AntiCheat") or tostring(v_u_self):find("Security") then
-				return
-			end
-		end
-
-		return v_u_nc(...)
-	end)
-
-	v_u_mt.__index = newcclosure(function(v_u_t, v_u_k)
-		return v_u_ni(v_u_t, v_u_k)
-	end)
-
-	setreadonly(v_u_mt, true)
-end
-
 local EcoHub = {}
 EcoHub.__index = EcoHub
 
