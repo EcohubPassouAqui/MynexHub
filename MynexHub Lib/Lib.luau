@@ -32,7 +32,7 @@ end)
 if _ok1 and _res1 then Icons = _res1 end
 
 local _ok2, _res2 = pcall(function()
-	return loadstring(game:HttpGet("https://raw.githubusercontent.com/EcohubPassouAqui/EcoHub/refs/heads/main/Notifications/EcoHub.lua"))()
+	return loadstring(game:HttpGet("https://raw.githubusercontent.com/EcohubPassouAqui/MynexHub/refs/heads/main/MynexHub%20Lib/scr/Notifications/Notifications.luau"))()
 end)
 if _ok2 and _res2 then Notifications = _res2 end
 
