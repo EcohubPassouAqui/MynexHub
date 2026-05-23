@@ -27,7 +27,7 @@ local Icons = {}
 local Notifications = {}
 
 local _ok1, _res1 = pcall(function()
-	return loadstring(game:HttpGet("https://raw.githubusercontent.com/EcohubPassouAqui/EcoHub/main/Databases/Icons.lua"))()
+	return loadstring(game:HttpGet("https://raw.githubusercontent.com/EcohubPassouAqui/MynexHub/refs/heads/main/MynexHub%20Lib/scr/Icons.luau"))()
 end)
 if _ok1 and _res1 then Icons = _res1 end
 
