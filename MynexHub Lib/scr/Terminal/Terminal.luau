@@ -1,0 +1,224 @@
+-- // rip_sheldoohz
+-- // console_utils
+
+local global_env = getgenv() or shared or _G or {}
+if global_env["console_utils"] then return global_env.console_utils end
+
+local cloneref = (cloneref or clonereference or function(instance: any) return instance end)
+
+local RunService = cloneref(game:GetService("RunService"))
+local LogService = cloneref(game:GetService("LogService"))
+local CoreGui = cloneref(game:GetService("CoreGui"))
+
+if not global_env._console_message_counter then
+    global_env._console_message_counter = 3000
+end
+
+local module = {}
+
+function _internal_get_guid()
+    global_env._console_message_counter = global_env._console_message_counter + 1
+    return tostring(global_env._console_message_counter) .. tostring(tick()) .. tostring(math.random(1000, 9999))
+end
+
+function _internal_get_message_index(UMID)
+    local message_index = -1
+    local attempts = 0
+    local max_attempts = 100
+
+    repeat
+        task.wait(0.05)
+        attempts = attempts + 1
+
+        for idx, data in pairs(LogService:GetLogHistory()) do
+            if tostring(data.message) ~= tostring(UMID) then continue end
+            message_index = idx + 1
+            break
+        end
+    until message_index ~= -1 or attempts >= max_attempts
+
+    return message_index
+end
+
+function _internal_is_console_open()
+    local console_master = CoreGui:FindFirstChild("DevConsoleMaster")
+    if not console_master then return false end
+
+    local window = console_master:FindFirstChild("DevConsoleWindow")
+    if not window then return false end
+
+    local dev_console_ui = window:FindFirstChild("DevConsoleUI")
+    if not dev_console_ui then return false end
+
+    return (dev_console_ui:FindFirstChild("MainView") and dev_console_ui.MainView:FindFirstChild("ClientLog"))
+end
+
+function module.custom_print(...)
+    local message = ""
+    local image = ""
+    local color = Color3.fromRGB(255, 255, 255)
+    local timestamp = os.date("%H:%M:%S")
+
+    if typeof(select(1, ...)) == "table" then
+        local data = select(1, ...)
+
+        if typeof(data.message) == "string" then message = data.message end
+        if typeof(data.image) == "string" then image = data.image end
+        if typeof(data.color) == "Color3" then color = data.color end
+    else
+        local msg = select(1, ...)
+        local img = select(2, ...)
+        local clr = select(3, ...)
+
+        if typeof(msg) == "string" then message = msg end
+        if typeof(img) == "string" then image = img end
+        if typeof(clr) == "Color3" then color = clr end
+    end
+
+    local UMID = _internal_get_guid()
+    print(UMID)
+
+    local message_index = _internal_get_message_index(UMID)
+
+    if message_index == -1 then
+        warn("[console_utils] UMID nao encontrado no log history. Abortando.")
+        return nil
+    end
+
+    local ConsoleUI
+    local conn
+
+    conn = RunService.RenderStepped:Connect(function()
+        if not _internal_is_console_open() then return end
+
+        if not ConsoleUI or not ConsoleUI.Parent or not ConsoleUI:IsDescendantOf(CoreGui) then
+            local ok, result = pcall(function()
+                return CoreGui.DevConsoleMaster.DevConsoleWindow.DevConsoleUI
+            end)
+            if not ok then return end
+            ConsoleUI = result
+        end
+
+        local log = ConsoleUI.MainView.ClientLog:FindFirstChild(tostring(message_index))
+        if not log then return end
+
+        local msg = log:FindFirstChild("msg")
+        local img = log:FindFirstChild("image")
+        if not msg or not img then return end
+
+        msg.Text = timestamp .. " -- " .. message
+        msg.TextColor3 = color
+        msg.TextWrapped = true
+
+        img.Image = image
+        img.ImageColor3 = color
+    end)
+
+    local log_module = {}
+
+    function log_module.update_message(...)
+        local update_timestamp = true
+
+        if typeof(select(1, ...)) == "table" then
+            local data = select(1, ...)
+
+            if typeof(data.message) == "string" then message = data.message end
+            if typeof(data.image) == "string" then image = data.image end
+            if typeof(data.color) == "Color3" then color = data.color end
+
+            if typeof(data.update_timestamp) == "boolean" then
+                update_timestamp = data.update_timestamp
+            end
+        else
+            local msg = select(1, ...)
+            local img = select(2, ...)
+            local clr = select(3, ...)
+            local update = select(4, ...)
+
+            if typeof(msg) == "string" then message = msg end
+            if typeof(img) == "string" then image = img end
+            if typeof(clr) == "Color3" then color = clr end
+            if typeof(update) == "boolean" then update_timestamp = update end
+        end
+
+        if update_timestamp then
+            timestamp = os.date("%H:%M:%S")
+        end
+    end
+
+    function log_module.cleanup()
+        conn:Disconnect()
+    end
+
+    return log_module
+end
+
+function module.custom_console_progressbar(params)
+    if typeof(params) == "string" then
+        params = { msg = params }
+    end
+
+    local msg = params["msg"] or params["message"]
+    local clr = params["clr"] or params["color"]
+    local img = params["img"] or params["image"]
+
+    local progressbar_char = "█"
+    local progressbar_empty = "░"
+
+    local message = module.custom_print(msg, img, clr)
+
+    if not message then
+        warn("[console_utils] Falha ao criar progressbar: custom_print retornou nil.")
+        return nil
+    end
+
+    local progress = 0
+
+    local progressbar_module = {}
+
+    function progressbar_module.update_message(_message, _image, _color)
+        message.update_message({
+            message = _message,
+            image = _image,
+            color = _color,
+            update_timestamp = false
+        })
+    end
+
+    function progressbar_module.update_progress(_progress)
+        progress = _progress
+
+        local normalized_progress = math.min(math.max(math.floor(_progress), 0), 100)
+
+        local progressbar_string = ""
+        for i = 1, 10 do
+            if i <= (normalized_progress / 10) then
+                progressbar_string = progressbar_string .. progressbar_char
+            else
+                progressbar_string = progressbar_string .. progressbar_empty
+            end
+        end
+
+        message.update_message(
+            msg .. " [" .. progressbar_string .. "] " .. normalized_progress .. "%",
+            img,
+            clr,
+            false
+        )
+    end
+
+    function progressbar_module.update_message_with_progress(_message, _progress)
+        _progress = _progress or progress
+        msg = _message
+        progressbar_module.update_progress(_progress)
+    end
+
+    function progressbar_module.cleanup()
+        message.cleanup()
+    end
+
+    return progressbar_module
+end
+
+global_env.console_utils = module
+return module
