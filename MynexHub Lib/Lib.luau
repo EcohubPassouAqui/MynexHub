@@ -1,62 +1,68 @@
+-- // EcoHub UI Library
+-- // Versao 2.0 - Melhorado
+
+local v_u_1 = game:GetService("TweenService")
+local v_u_2 = game:GetService("UserInputService")
+local v_u_3 = game:GetService("RunService")
+local v_u_4 = game:GetService("Players")
+local v_u_5 = game.CoreGui
+local v_u_6 = Instance.new
+local v_u_7 = UDim2.new
+local v_u_8 = UDim2.fromScale
+local v_u_9 = UDim.new
+local v_u_10 = Color3.fromRGB
+local v_u_11 = Color3.fromHSV
+local v_u_12 = Color3.toHSV
+local v_u_13 = TweenInfo.new
+local v_u_14 = Enum.EasingStyle
+local v_u_15 = Enum.Font
+local v_u_16 = math.clamp
+local v_u_17 = math.round
+local v_u_18 = string.format
+local v_u_19 = v_u_4.LocalPlayer
+local v_u_20 = workspace
+local v_u_21 = game.Teams
+local v_u_22 = v_u_4:GetPlayers()
+
 -- // Biblioteca Principal
 local EcoHub = {}
 EcoHub.__index = EcoHub
 
--- // Serviços
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local CoreGui = game.CoreGui
-local new = Instance.new
-local udim2 = UDim2.new
-local udim2Scale = UDim2.fromScale
-local udim = UDim.new
-local rgb = Color3.fromRGB
-local hsv = Color3.fromHSV
-local toHSV = Color3.toHSV
-local tweenInfo = TweenInfo.new
-local easingStyle = Enum.EasingStyle
-local font = Enum.Font
-local clamp = math.clamp
-local round = math.round
-local format = string.format
-
 -- // Bibliotecas Externas
-local Icons = {}
-local Notifications = {}
+local v_u_23 = {}
+local v_u_24 = {}
 
-local _ok1, _res1 = pcall(function()
+local v_u_25, v_u_26 = pcall(function()
 	return loadstring(game:HttpGet("https://raw.githubusercontent.com/EcohubPassouAqui/MynexHub/refs/heads/main/MynexHub%20Lib/scr/Icons.luau"))()
 end)
-if _ok1 and _res1 then Icons = _res1 end
+if v_u_25 and v_u_26 then v_u_23 = v_u_26 end
 
-local _ok2, _res2 = pcall(function()
+local v_u_27, v_u_28 = pcall(function()
 	return loadstring(game:HttpGet("https://raw.githubusercontent.com/EcohubPassouAqui/MynexHub/refs/heads/main/MynexHub%20Lib/scr/Notifications/Notifications.luau"))()
 end)
-if _ok2 and _res2 then Notifications = _res2 end
+if v_u_27 and v_u_28 then v_u_24 = v_u_28 end
 
 -- // Sistema de Salvamento
-local SaveData = {}
-local _saveFile = nil
-local _dirty = false
+local v_u_29 = {}
+local v_u_30 = nil
+local v_u_31 = false
 
-local function _getSavePath()
-	if _saveFile then return _saveFile end
-	local raw = tostring(game.Name or "unknown")
-	raw = raw:gsub("[^%w%s%-_]", ""):gsub("%s+", "_"):sub(1, 40)
-	if raw == "" then raw = "unknown" end
-	_saveFile = "EcoHub/" .. raw .. "_config.json"
-	return _saveFile
+local function v_u_32()
+	if v_u_30 then return v_u_30 end
+	local v_u_33 = tostring(game.Name or "unknown")
+	v_u_33 = v_u_33:gsub("[^%w%s%-_]", ""):gsub("%s+", "_"):sub(1, 40)
+	if v_u_33 == "" then v_u_33 = "unknown" end
+	v_u_30 = "EcoHub/" .. v_u_33 .. "_config.json"
+	return v_u_30
 end
 
-local function _ensureFolder()
+local function v_u_34()
 	pcall(function()
 		if not isfolder("EcoHub") then makefolder("EcoHub") end
 	end)
 end
 
-local function _encodeValue(v)
+local function v_u_35(v)
 	if type(v) == "boolean" then
 		return v and "true" or "false"
 	elseif type(v) == "number" then
@@ -64,637 +70,781 @@ local function _encodeValue(v)
 	elseif type(v) == "string" then
 		return '"' .. v:gsub('\\', '\\\\'):gsub('"', '\\"') .. '"'
 	elseif typeof(v) == "Color3" then
-		return '"__color3__' .. round(v.R*255) .. ',' .. round(v.G*255) .. ',' .. round(v.B*255) .. '"'
+		return '"__color3__' .. v_u_17(v.R*255) .. ',' .. v_u_17(v.G*255) .. ',' .. v_u_17(v.B*255) .. '"'
 	end
 	return '"[unsupported]"'
 end
 
-local function _buildJson()
-	local saves = {}
-	for k, v in pairs(SaveData) do
-		table.insert(saves, '"' .. tostring(k) .. '":' .. _encodeValue(v))
+local function v_u_36()
+	local v_u_37 = {}
+	for k, v in pairs(v_u_29) do
+		table.insert(v_u_37, '"' .. tostring(k) .. '":' .. v_u_35(v))
 	end
-	local gameId = tostring(game.PlaceId or 0)
-	local gameName = tostring(game.Name or "unknown"):gsub('"', '\\"')
-	return '{"nome":"' .. gameName .. '","id":"' .. gameId .. '","saves":{' .. table.concat(saves, ",") .. '}}'
+	local v_u_38 = tostring(game.PlaceId or 0)
+	local v_u_39 = tostring(game.Name or "unknown"):gsub('"', '\\"')
+	return '{"nome":"' .. v_u_39 .. '","id":"' .. v_u_38 .. '","saves":{' .. table.concat(v_u_37, ",") .. '}}'
 end
 
-local function _parseJson(str)
-	local result = {}
-	if not str or str == "" then return result end
-	local block = str:match('"saves"%s*:%s*({[^}]*})')
-	if not block then return result end
-	block = block:match("^%s*{(.+)}%s*$")
-	if not block then return result end
-	for key, val in block:gmatch('"([^"]+)"%s*:%s*([^,}]+)') do
+local function v_u_40(str)
+	local v_u_41 = {}
+	if not str or str == "" then return v_u_41 end
+	local v_u_42 = str:match('"saves"%s*:%s*({[^}]*})')
+	if not v_u_42 then return v_u_41 end
+	v_u_42 = v_u_42:match("^%s*{(.+)}%s*$")
+	if not v_u_42 then return v_u_41 end
+	for key, val in v_u_42:gmatch('"([^"]+)"%s*:%s*([^,}]+)') do
 		val = val:match("^%s*(.-)%s*$")
 		if val == "true" then
-			result[key] = true
+			v_u_41[key] = true
 		elseif val == "false" then
-			result[key] = false
+			v_u_41[key] = false
 		elseif val:match('^"__color3__(%d+),(%d+),(%d+)"$') then
 			local r, g, b = val:match('^"__color3__(%d+),(%d+),(%d+)"$')
-			result[key] = rgb(tonumber(r), tonumber(g), tonumber(b))
+			v_u_41[key] = v_u_10(tonumber(r), tonumber(g), tonumber(b))
 		elseif val:match('^"(.*)"$') then
-			result[key] = val:match('^"(.*)"$')
+			v_u_41[key] = val:match('^"(.*)"$')
 		else
 			local n = tonumber(val)
-			if n then result[key] = n end
+			if n then v_u_41[key] = n end
 		end
 	end
-	return result
+	return v_u_41
 end
 
-local function _loadSave()
-	_ensureFolder()
+local function v_u_43()
+	v_u_34()
 	pcall(function()
-		local path = _getSavePath()
-		if isfile(path) then
-			local decoded = _parseJson(readfile(path))
-			for k, v in pairs(decoded) do SaveData[k] = v end
+		local v_u_44 = v_u_32()
+		if isfile(v_u_44) then
+			local v_u_45 = v_u_40(readfile(v_u_44))
+			for k, v in pairs(v_u_45) do v_u_29[k] = v end
 		end
 	end)
 end
 
-local function _flushSave()
-	if not _dirty then return end
-	_dirty = false
-	_ensureFolder()
+local function v_u_46()
+	if not v_u_31 then return end
+	v_u_31 = false
+	v_u_34()
 	pcall(function()
-		writefile(_getSavePath(), _buildJson())
+		writefile(v_u_32(), v_u_36())
 	end)
 end
 
-local function SaveGet(id)
+local function v_u_47(id)
 	if not id or id == "" then return nil end
-	return SaveData[id]
+	return v_u_29[id]
 end
 
-local function SaveSet(id, val)
+local function v_u_48(id, val)
 	if not id or id == "" then return end
-	SaveData[id] = val
-	_dirty = true
-	task.defer(_flushSave)
+	v_u_29[id] = val
+	v_u_31 = true
+	task.defer(v_u_46)
 end
 
-_loadSave()
+v_u_43()
 
--- // Funções Auxiliares
-local function Tw(obj, props, t, style)
+-- // Funcoes Auxiliares
+local function v_u_49(obj, props, t, style)
 	if not obj or not obj.Parent then return end
-	TweenService:Create(obj, tweenInfo(t or 0.15, style or easingStyle.Quad), props):Play()
+	v_u_1:Create(obj, v_u_13(t or 0.15, style or v_u_14.Quad), props):Play()
 end
 
-local function Corner(obj, r)
-	local c = new("UICorner")
-	c.CornerRadius = udim(0, r or 6)
-	c.Parent = obj
-	return c
+local function v_u_50(obj, r)
+	local v_u_51 = v_u_6("UICorner")
+	v_u_51.CornerRadius = v_u_9(0, r or 6)
+	v_u_51.Parent = obj
+	return v_u_51
 end
 
-local function Stroke(obj, color, thickness, transparency)
-	local s = new("UIStroke")
-	s.Color = color
-	s.Thickness = thickness or 1
-	s.Transparency = transparency or 0
-	s.Parent = obj
-	return s
+local function v_u_52(obj, color, thickness, transparency)
+	local v_u_53 = v_u_6("UIStroke")
+	v_u_53.Color = color
+	v_u_53.Thickness = thickness or 1
+	v_u_53.Transparency = transparency or 0
+	v_u_53.Parent = obj
+	return v_u_53
 end
 
-local function N(class, props)
-	local inst = new(class)
+local function v_u_54(class, props)
+	local v_u_55 = v_u_6(class)
 	for k, v in pairs(props or {}) do
-		if k ~= "Parent" then inst[k] = v end
+		if k ~= "Parent" then v_u_55[k] = v end
 	end
-	if props and props.Parent then inst.Parent = props.Parent end
-	return inst
+	if props and props.Parent then v_u_55.Parent = props.Parent end
+	return v_u_55
 end
 
-local function GetIcon(name)
+local function v_u_56(name)
 	if not name or name == "" then return "" end
-	if not Icons or not Icons.assets then return "" end
-	local asset = Icons.assets["lucide-" .. name]
-	if not asset then asset = Icons.assets[name] or "" end
-	return asset
+	if not v_u_23 or not v_u_23.assets then return "" end
+	local v_u_57 = v_u_23.assets["lucide-" .. name]
+	if not v_u_57 then v_u_57 = v_u_23.assets[name] or "" end
+	return v_u_57
 end
 
-local function NotifyError(title, desc)
+local function v_u_58(title, desc)
 	pcall(function()
-		if Notifications and Notifications.Notify then
-			Notifications.Notify({ Title = "[ERRO] " .. tostring(title), Description = tostring(desc), Duration = 5 })
+		if v_u_24 and v_u_24.Notify then
+			v_u_24.Notify({ Title = "[ERRO] " .. tostring(title), Description = tostring(desc), Duration = 5 })
 		end
 	end)
 end
 
-local function ColorToHex(c)
-	return format("%02X%02X%02X", round(c.R*255), round(c.G*255), round(c.B*255))
+local function v_u_59(c)
+	return v_u_18("%02X%02X%02X", v_u_17(c.R*255), v_u_17(c.G*255), v_u_17(c.B*255))
 end
 
-local function HexToColor(hex)
+local function v_u_60(hex)
 	hex = hex:gsub("[^%x]", ""):upper()
 	if #hex == 6 then
 		local r = tonumber(hex:sub(1,2), 16)
 		local g = tonumber(hex:sub(3,4), 16)
 		local b = tonumber(hex:sub(5,6), 16)
-		if r and g and b then return rgb(r, g, b) end
+		if r and g and b then return v_u_10(r, g, b) end
 	end
 	return nil
 end
 
+-- // Funcao Jogadores em Tempo Real
+local function v_u_61()
+	local v_u_62 = {}
+	for _, v_u_63 in ipairs(v_u_4:GetPlayers()) do
+		table.insert(v_u_62, v_u_63.Name)
+	end
+	return v_u_62
+end
+
 -- // Tema de Cores
-local T = {
-	bg = rgb(13, 13, 13),
-	topbar = rgb(20, 20, 20),
-	tabbar = rgb(13, 13, 13),
-	card = rgb(22, 22, 22),
-	elBg = rgb(24, 24, 24),
-	elBgHov = rgb(34, 34, 34),
-	elBgPress = rgb(16, 16, 16),
-	elemHover = rgb(34, 34, 34),
-	border = rgb(45, 45, 45),
-	divider = rgb(35, 35, 35),
-	textPri = rgb(255, 255, 255),
-	textSec = rgb(185, 185, 185),
-	textDim = rgb(100, 100, 100),
-	muted = rgb(100, 100, 100),
-	dim = rgb(50, 50, 50),
-	accentDark = rgb(38, 38, 42),
-	white = rgb(255, 255, 255),
-	secBg = rgb(18, 18, 18),
-	secBord = rgb(38, 38, 38),
-	secText = rgb(210, 210, 210),
-	togOn = rgb(225, 225, 230),
-	togOff = rgb(26, 26, 30),
-	togKnobOn = rgb(20, 20, 24),
-	togKnobOff = rgb(80, 80, 86),
-	togBordOn = rgb(210, 210, 215),
-	togBordOff = rgb(48, 48, 54),
-	chkOn = rgb(225, 225, 230),
-	chkOff = rgb(22, 22, 26),
-	chkBordOn = rgb(210, 210, 215),
-	chkBordOff = rgb(48, 48, 54),
-	chkKnobOn = rgb(20, 20, 24),
-	chkKnobOff = rgb(255, 255, 255),
-	dropBg = rgb(16, 16, 19),
-	dropBorder = rgb(42, 42, 50),
-	dropSel = rgb(38, 38, 46),
-	dropItem = rgb(30, 30, 36),
-	elBorder = rgb(38, 38, 44),
-	disabled = rgb(28, 28, 30),
-	disabledTxt = rgb(60, 60, 64),
-	labelVal = rgb(180, 180, 188),
+local v_u_64 = {
+	bg = v_u_10(13, 13, 13),
+	topbar = v_u_10(20, 20, 20),
+	tabbar = v_u_10(13, 13, 13),
+	card = v_u_10(22, 22, 22),
+	elBg = v_u_10(24, 24, 24),
+	elBgHov = v_u_10(34, 34, 34),
+	elBgPress = v_u_10(16, 16, 16),
+	elemHover = v_u_10(34, 34, 34),
+	border = v_u_10(45, 45, 45),
+	divider = v_u_10(35, 35, 35),
+	textPri = v_u_10(255, 255, 255),
+	textSec = v_u_10(185, 185, 185),
+	textDim = v_u_10(100, 100, 100),
+	muted = v_u_10(100, 100, 100),
+	dim = v_u_10(50, 50, 50),
+	accentDark = v_u_10(38, 38, 42),
+	white = v_u_10(255, 255, 255),
+	secBg = v_u_10(18, 18, 18),
+	secBord = v_u_10(38, 38, 38),
+	secText = v_u_10(210, 210, 210),
+	togOn = v_u_10(225, 225, 230),
+	togOff = v_u_10(26, 26, 30),
+	togKnobOn = v_u_10(20, 20, 24),
+	togKnobOff = v_u_10(80, 80, 86),
+	togBordOn = v_u_10(210, 210, 215),
+	togBordOff = v_u_10(48, 48, 54),
+	chkOn = v_u_10(225, 225, 230),
+	chkOff = v_u_10(22, 22, 26),
+	chkBordOn = v_u_10(210, 210, 215),
+	chkBordOff = v_u_10(48, 48, 54),
+	chkKnobOn = v_u_10(20, 20, 24),
+	chkKnobOff = v_u_10(255, 255, 255),
+	dropBg = v_u_10(16, 16, 19),
+	dropBorder = v_u_10(42, 42, 50),
+	dropSel = v_u_10(38, 38, 46),
+	dropItem = v_u_10(30, 30, 36),
+	elBorder = v_u_10(38, 38, 44),
+	disabled = v_u_10(28, 28, 30),
+	disabledTxt = v_u_10(60, 60, 64),
+	labelVal = v_u_10(180, 180, 188),
+	secIconBg = v_u_10(30, 30, 36),
+	secIconClr = v_u_10(160, 160, 170),
 }
 
 -- // Constantes de Interface
-local EL_H = 36
-local WIN_W = 620
-local WIN_H = 370
+local v_u_65 = 36
+local v_u_66 = 52
+local v_u_67 = 620
+local v_u_68 = 370
 
 -- // Sistema de Pesquisa
-local AllElements = {}
+local v_u_69 = {}
 
-local function RegEl(frame, label)
-	table.insert(AllElements, { frame = frame, label = string.lower(label or "") })
+local function v_u_70(frame, label)
+	table.insert(v_u_69, { frame = frame, label = string.lower(label or "") })
 end
 
-local function RunSearch(query)
+local function v_u_71(query)
 	query = string.lower(query or "")
-	for _, el in ipairs(AllElements) do
+	for _, el in ipairs(v_u_69) do
 		if el.frame and el.frame.Parent then
 			el.frame.Visible = (query == "") or (string.find(el.label, query, 1, true) ~= nil)
 		end
 	end
 end
 
--- // Criação de Janela
+-- // Criacao de Janela
 function EcoHub:CreateWindow(config)
 	config = config or {}
-	local winTitle = config.Title or "EcoHub"
-	local winSubTitle = config.SubTitle or "v1"
+	local v_u_72 = config.Title or "EcoHub"
+	local v_u_73 = config.SubTitle or "v1"
 
-	if CoreGui:FindFirstChild("EcoHub") then
-		CoreGui:FindFirstChild("EcoHub"):Destroy()
+	if v_u_5:FindFirstChild("EcoHub") then
+		v_u_5:FindFirstChild("EcoHub"):Destroy()
 	end
 
-	local ScreenGui = N("ScreenGui", {
-		Name = "EcoHub", Parent = CoreGui,
+	local v_u_74 = v_u_54("ScreenGui", {
+		Name = "EcoHub", Parent = v_u_5,
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling, ResetOnSpawn = false,
 	})
 
-	local MainFrame = N("Frame", {
-		Name = "MainFrame", Parent = ScreenGui,
-		BackgroundColor3 = T.bg,
-		Position = udim2(0.5, -WIN_W/2, 0.5, -WIN_H/2),
-		Size = udim2(0, WIN_W, 0, WIN_H),
+	local v_u_75 = v_u_54("Frame", {
+		Name = "MainFrame", Parent = v_u_74,
+		BackgroundColor3 = v_u_64.bg,
+		Position = v_u_7(0.5, -v_u_67/2, 0.5, -v_u_68/2),
+		Size = v_u_7(0, v_u_67, 0, v_u_68),
 		Active = true, Draggable = true, ClipsDescendants = false,
 	})
-	Corner(MainFrame, 10)
-	Stroke(MainFrame, rgb(52, 52, 58), 1.2)
+	v_u_50(v_u_75, 10)
+	v_u_52(v_u_75, v_u_10(52, 52, 58), 1.2)
 
-	local ClipFrame = N("Frame", {
-		Name = "ClipFrame", Parent = MainFrame,
-		BackgroundTransparency = 1, Size = udim2Scale(1, 1),
+	local v_u_76 = v_u_54("Frame", {
+		Name = "ClipFrame", Parent = v_u_75,
+		BackgroundTransparency = 1, Size = v_u_8(1, 1),
 		ClipsDescendants = true, BorderSizePixel = 0, ZIndex = 1,
 	})
 
 	-- // Barra Superior
-	local TopBar = N("Frame", {
-		Name = "TopBar", Parent = ClipFrame,
-		BackgroundColor3 = T.topbar, Size = udim2(1, 0, 0, 58),
+	local v_u_77 = v_u_54("Frame", {
+		Name = "TopBar", Parent = v_u_76,
+		BackgroundColor3 = v_u_64.topbar, Size = v_u_7(1, 0, 0, 58),
 		BorderSizePixel = 0, ZIndex = 2,
 	})
-	Corner(TopBar, 10)
-	N("Frame", {
-		Parent = TopBar, BackgroundColor3 = T.topbar,
-		Position = udim2(0, 0, 1, -10), Size = udim2(1, 0, 0, 10), BorderSizePixel = 0,
+	v_u_50(v_u_77, 10)
+	v_u_54("Frame", {
+		Parent = v_u_77, BackgroundColor3 = v_u_64.topbar,
+		Position = v_u_7(0, 0, 1, -10), Size = v_u_7(1, 0, 0, 10), BorderSizePixel = 0,
 	})
-	N("Frame", {
-		Parent = TopBar, BackgroundColor3 = T.divider,
-		Position = udim2(0, 0, 1, -1), Size = udim2(1, 0, 0, 1), BorderSizePixel = 0, ZIndex = 3,
+	v_u_54("Frame", {
+		Parent = v_u_77, BackgroundColor3 = v_u_64.divider,
+		Position = v_u_7(0, 0, 1, -1), Size = v_u_7(1, 0, 0, 1), BorderSizePixel = 0, ZIndex = 3,
 	})
-	N("TextLabel", {
-		Parent = TopBar, BackgroundTransparency = 1,
-		Position = udim2(0, 18, 0, 8), Size = udim2(0, 300, 0, 22),
-		Font = font.Code, Text = winTitle,
-		TextColor3 = T.textPri, TextSize = 14,
+	v_u_54("TextLabel", {
+		Parent = v_u_77, BackgroundTransparency = 1,
+		Position = v_u_7(0, 18, 0, 8), Size = v_u_7(0, 300, 0, 22),
+		Font = v_u_15.Code, Text = v_u_72,
+		TextColor3 = v_u_64.textPri, TextSize = 14,
 		TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3,
 	})
-	N("TextLabel", {
-		Parent = TopBar, BackgroundTransparency = 1,
-		Position = udim2(0, 18, 0, 32), Size = udim2(0, 300, 0, 16),
-		Font = font.Code, Text = winSubTitle,
-		TextColor3 = T.muted, TextSize = 11,
+	v_u_54("TextLabel", {
+		Parent = v_u_77, BackgroundTransparency = 1,
+		Position = v_u_7(0, 18, 0, 32), Size = v_u_7(0, 300, 0, 16),
+		Font = v_u_15.Code, Text = v_u_73,
+		TextColor3 = v_u_64.muted, TextSize = 11,
 		TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3,
 	})
 
-	-- // Caixa de Pesquisa
-	local SearchHolder = N("Frame", {
-		Parent = TopBar, BackgroundColor3 = rgb(26, 26, 26),
-		Position = udim2(1, -206, 0.5, -14), Size = udim2(0, 155, 0, 28),
+	-- // Caixa de Pesquisa Melhorada
+	local v_u_78 = v_u_54("Frame", {
+		Parent = v_u_77, BackgroundColor3 = v_u_10(22, 22, 26),
+		Position = v_u_7(1, -214, 0.5, -15), Size = v_u_7(0, 163, 0, 30),
 		BorderSizePixel = 0, ZIndex = 3,
 	})
-	Corner(SearchHolder, 6)
-	Stroke(SearchHolder, rgb(44, 44, 50), 1)
-	N("ImageLabel", {
-		Parent = SearchHolder, BackgroundTransparency = 1,
-		Position = udim2(0, 8, 0.5, -6), Size = udim2(0, 13, 0, 13),
-		Image = GetIcon("search"), ImageColor3 = rgb(75, 75, 80), ZIndex = 4,
+	v_u_50(v_u_78, 7)
+	v_u_52(v_u_78, v_u_10(44, 44, 52), 1)
+
+	local v_u_79 = v_u_54("Frame", {
+		Parent = v_u_78, BackgroundColor3 = v_u_10(35, 35, 42),
+		Position = v_u_7(0, 6, 0.5, -9), Size = v_u_7(0, 18, 0, 18),
+		BorderSizePixel = 0, ZIndex = 4,
 	})
-	local SearchBox = N("TextBox", {
-		Parent = SearchHolder, BackgroundTransparency = 1,
-		Position = udim2(0, 27, 0, 0), Size = udim2(1, -31, 1, 0),
-		Font = font.Code, PlaceholderText = "pesquisar...",
-		PlaceholderColor3 = rgb(60, 60, 65),
-		Text = "", TextColor3 = rgb(220, 220, 225),
-		TextSize = 11, ClearTextOnFocus = false, BorderSizePixel = 0, ZIndex = 4,
+	v_u_50(v_u_79, 5)
+	v_u_54("ImageLabel", {
+		Parent = v_u_79, BackgroundTransparency = 1,
+		Position = v_u_7(0.5, -5, 0.5, -5), Size = v_u_7(0, 10, 0, 10),
+		Image = v_u_56("search"), ImageColor3 = v_u_10(120, 120, 130), ZIndex = 5,
 	})
-	SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-		RunSearch(SearchBox.Text)
+
+	local v_u_80 = v_u_54("TextBox", {
+		Parent = v_u_78, BackgroundTransparency = 1,
+		Position = v_u_7(0, 30, 0, 0), Size = v_u_7(1, -36, 1, 0),
+		Font = v_u_15.Code, PlaceholderText = "pesquisar elementos...",
+		PlaceholderColor3 = v_u_10(55, 55, 62),
+		Text = "", TextColor3 = v_u_10(220, 220, 228),
+		TextSize = 10, ClearTextOnFocus = false, BorderSizePixel = 0, ZIndex = 4,
+	})
+	v_u_80:GetPropertyChangedSignal("Text"):Connect(function()
+		v_u_71(v_u_80.Text)
+		if v_u_80.Text ~= "" then
+			v_u_49(v_u_78, { BackgroundColor3 = v_u_10(26, 26, 32) }, 0.1)
+		else
+			v_u_49(v_u_78, { BackgroundColor3 = v_u_10(22, 22, 26) }, 0.1)
+		end
+	end)
+	v_u_80.Focused:Connect(function()
+		v_u_49(v_u_78, { BackgroundColor3 = v_u_10(26, 26, 32) }, 0.1)
+	end)
+	v_u_80.FocusLost:Connect(function()
+		if v_u_80.Text == "" then
+			v_u_49(v_u_78, { BackgroundColor3 = v_u_10(22, 22, 26) }, 0.1)
+		end
 	end)
 
-	-- // Botão Minimizar
-	local MoveBtn = N("TextButton", {
-		Parent = TopBar, BackgroundTransparency = 1,
-		Position = udim2(1, -40, 0.5, -12), Size = udim2(0, 24, 0, 24),
+	-- // Botao Minimizar
+	local v_u_81 = v_u_54("TextButton", {
+		Parent = v_u_77, BackgroundTransparency = 1,
+		Position = v_u_7(1, -40, 0.5, -12), Size = v_u_7(0, 24, 0, 24),
 		Text = "", ZIndex = 3,
 	})
-	N("ImageLabel", {
-		Parent = MoveBtn, BackgroundTransparency = 1, Size = udim2Scale(1, 1),
-		Image = GetIcon("move"), ImageColor3 = rgb(95, 95, 100), ZIndex = 4,
+	v_u_54("ImageLabel", {
+		Parent = v_u_81, BackgroundTransparency = 1, Size = v_u_8(1, 1),
+		Image = v_u_56("move"), ImageColor3 = v_u_10(95, 95, 100), ZIndex = 4,
 	})
 
-	-- // Área de Páginas
-	local PageArea = N("Frame", {
-		Name = "PageArea", Parent = ClipFrame, BackgroundTransparency = 1,
-		Position = udim2(0, 0, 0, 58), Size = udim2(1, 0, 1, -116),
+	-- // Area de Paginas
+	local v_u_82 = v_u_54("Frame", {
+		Name = "PageArea", Parent = v_u_76, BackgroundTransparency = 1,
+		Position = v_u_7(0, 0, 0, 58), Size = v_u_7(1, 0, 1, -116),
 		ClipsDescendants = false,
 	})
 
 	-- // Barra de Abas
-	local TabBar = N("Frame", {
-		Name = "TabBar", Parent = ClipFrame,
-		BackgroundColor3 = T.tabbar,
-		Position = udim2(0, 0, 1, -58), Size = udim2(1, 0, 0, 58),
+	local v_u_83 = v_u_54("Frame", {
+		Name = "TabBar", Parent = v_u_76,
+		BackgroundColor3 = v_u_64.tabbar,
+		Position = v_u_7(0, 0, 1, -58), Size = v_u_7(1, 0, 0, 58),
 		BorderSizePixel = 0, ClipsDescendants = true, ZIndex = 5,
 	})
-	Corner(TabBar, 10)
-	N("Frame", {
-		Parent = TabBar, BackgroundColor3 = T.tabbar,
-		Position = udim2(0, 0, 0, 0), Size = udim2(1, 0, 0, 10), BorderSizePixel = 0,
+	v_u_50(v_u_83, 10)
+	v_u_54("Frame", {
+		Parent = v_u_83, BackgroundColor3 = v_u_64.tabbar,
+		Position = v_u_7(0, 0, 0, 0), Size = v_u_7(1, 0, 0, 10), BorderSizePixel = 0,
 	})
-	N("Frame", {
-		Parent = TabBar, BackgroundColor3 = T.divider,
-		Position = udim2(0, 0, 0, 0), Size = udim2(1, 0, 0, 1), BorderSizePixel = 0, ZIndex = 6,
+	v_u_54("Frame", {
+		Parent = v_u_83, BackgroundColor3 = v_u_64.divider,
+		Position = v_u_7(0, 0, 0, 0), Size = v_u_7(1, 0, 0, 1), BorderSizePixel = 0, ZIndex = 6,
 	})
 
 	-- // Sistema de Abas
-	local TAB_SML = 48
-	local TAB_EXP = 124
-	local ISMALL = 17
-	local tabList = {}
-	local tabBtns = {}
-	local pages = {}
-	local curTab = nil
+	local v_u_84 = 48
+	local v_u_85 = 124
+	local v_u_86 = 17
+	local v_u_87 = {}
+	local v_u_88 = {}
+	local v_u_89 = {}
+	local v_u_90 = nil
 
-	local function calcPos(ai)
-		local n = math.max(1, #tabList)
-		local expW = TAB_EXP
-		if expW + (n-1)*TAB_SML > WIN_W - 18 then
-			expW = math.max(TAB_SML + 14, WIN_W - 18 - (n-1)*TAB_SML)
+	local function v_u_91(ai)
+		local n = math.max(1, #v_u_87)
+		local expW = v_u_85
+		if expW + (n-1)*v_u_84 > v_u_67 - 18 then
+			expW = math.max(v_u_84 + 14, v_u_67 - 18 - (n-1)*v_u_84)
 		end
-		local off = math.max(2, math.floor((WIN_W - (expW + (n-1)*TAB_SML)) / 2))
+		local off = math.max(2, math.floor((v_u_67 - (expW + (n-1)*v_u_84)) / 2))
 		local pos, x = {}, off
 		for i = 1, n do
-			local w = (i == ai) and expW or TAB_SML
+			local w = (i == ai) and expW or v_u_84
 			pos[i] = { x = x, w = w }
 			x = x + w
 		end
 		return pos
 	end
 
-	local function applyPos(ai, animate)
-		local pos = calcPos(ai)
-		for i, tb in ipairs(tabBtns) do
+	local function v_u_92(ai, animate)
+		local pos = v_u_91(ai)
+		for i, tb in ipairs(v_u_88) do
 			local p = pos[i]
 			if animate then
-				TweenService:Create(tb.bg, tweenInfo(0.26, easingStyle.Quint), {
-					Position = udim2(0, p.x, 0, 0),
-					Size = udim2(0, p.w, 1, 0),
+				v_u_1:Create(tb.bg, v_u_13(0.26, v_u_14.Quint), {
+					Position = v_u_7(0, p.x, 0, 0),
+					Size = v_u_7(0, p.w, 1, 0),
 				}):Play()
 			else
-				tb.bg.Position = udim2(0, p.x, 0, 0)
-				tb.bg.Size = udim2(0, p.w, 1, 0)
+				tb.bg.Position = v_u_7(0, p.x, 0, 0)
+				tb.bg.Size = v_u_7(0, p.w, 1, 0)
 			end
 		end
 	end
 
-	local function switchTab(name)
-		if curTab == name then return end
-		if curTab and pages[curTab] then pages[curTab].pg.Visible = false end
-		curTab = name
-		pages[name].pg.Visible = true
+	local function v_u_93(name)
+		if v_u_90 == name then return end
+		if v_u_90 and v_u_89[v_u_90] then v_u_89[v_u_90].pg.Visible = false end
+		v_u_90 = name
+		v_u_89[name].pg.Visible = true
 		local ai = 1
-		for i, t in ipairs(tabList) do
+		for i, t in ipairs(v_u_87) do
 			if t.name == name then ai = i; break end
 		end
-		applyPos(ai, true)
-		for i, tb in ipairs(tabBtns) do
-			local on = tabList[i].name == name
+		v_u_92(ai, true)
+		for i, tb in ipairs(v_u_88) do
+			local on = v_u_87[i].name == name
 			if on then
-				Tw(tb.sq, { BackgroundColor3 = T.accentDark }, 0.2)
-				Tw(tb.str, { Color = T.white, Thickness = 1.5 }, 0.2)
-				Tw(tb.img, { ImageColor3 = T.white }, 0.2)
-				Tw(tb.lbl, { TextColor3 = T.textPri, TextTransparency = 0 }, 0.2)
-				Tw(tb.sub, { TextColor3 = T.muted, TextTransparency = 0 }, 0.2)
+				v_u_49(tb.sq, { BackgroundColor3 = v_u_64.accentDark }, 0.2)
+				v_u_49(tb.str, { Color = v_u_64.white, Thickness = 1.5 }, 0.2)
+				v_u_49(tb.img, { ImageColor3 = v_u_64.white }, 0.2)
+				v_u_49(tb.lbl, { TextColor3 = v_u_64.textPri, TextTransparency = 0 }, 0.2)
+				v_u_49(tb.sub, { TextColor3 = v_u_64.muted, TextTransparency = 0 }, 0.2)
 			else
-				Tw(tb.sq, { BackgroundColor3 = T.card }, 0.2)
-				Tw(tb.str, { Color = T.border, Thickness = 1 }, 0.2)
-				Tw(tb.img, { ImageColor3 = T.dim }, 0.2)
-				Tw(tb.lbl, { TextTransparency = 1 }, 0.15)
-				Tw(tb.sub, { TextTransparency = 1 }, 0.15)
+				v_u_49(tb.sq, { BackgroundColor3 = v_u_64.card }, 0.2)
+				v_u_49(tb.str, { Color = v_u_64.border, Thickness = 1 }, 0.2)
+				v_u_49(tb.img, { ImageColor3 = v_u_64.dim }, 0.2)
+				v_u_49(tb.lbl, { TextTransparency = 1 }, 0.15)
+				v_u_49(tb.sub, { TextTransparency = 1 }, 0.15)
 			end
 		end
 	end
 
-	local winApi = {}
+	local v_u_94 = {}
 
 	-- // Adicionar Aba
-	function winApi:AddTab(cfg)
+	function v_u_94:AddTab(cfg)
 		cfg = cfg or {}
-		local name = cfg.Name or ("Tab" .. tostring(#tabList + 1))
+		local name = cfg.Name or ("Tab" .. tostring(#v_u_87 + 1))
 		local subText = cfg.Sub or ""
 		local iconKey = cfg.Icon or "home"
 
-		if #tabList >= 10 then
-			NotifyError("AddTab", "Limite de 10 tabs atingido.")
+		if #v_u_87 >= 10 then
+			v_u_58("AddTab", "Limite de 10 tabs atingido.")
 			return nil
 		end
 
-		local pg = N("Frame", {
-			Name = name, Parent = PageArea, BackgroundTransparency = 1,
-			Size = udim2(1, 0, 1, 0), Visible = false, ClipsDescendants = false,
+		local v_u_95 = v_u_54("Frame", {
+			Name = name, Parent = v_u_82, BackgroundTransparency = 1,
+			Size = v_u_7(1, 0, 1, 0), Visible = false, ClipsDescendants = false,
 		})
 
-		local function makeScroll(posX, sizeW)
-			local scroll = N("ScrollingFrame", {
-				Parent = pg,
-				Position = udim2(posX, posX == 0 and 8 or 4, 0, 5),
-				Size = udim2(sizeW, -12, 1, -10),
+		local function v_u_96(posX, sizeW)
+			local v_u_97 = v_u_54("ScrollingFrame", {
+				Parent = v_u_95,
+				Position = v_u_7(posX, posX == 0 and 8 or 4, 0, 5),
+				Size = v_u_7(sizeW, -12, 1, -10),
 				BackgroundTransparency = 1, BorderSizePixel = 0,
-				ScrollBarThickness = 2, ScrollBarImageColor3 = rgb(70, 70, 76),
-				CanvasSize = udim2(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y,
+				ScrollBarThickness = 2, ScrollBarImageColor3 = v_u_10(70, 70, 76),
+				CanvasSize = v_u_7(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y,
 				ScrollingDirection = Enum.ScrollingDirection.Y, ScrollingEnabled = true,
+				ElasticBehavior = Enum.ElasticBehavior.Never,
 			})
-			local layout = N("UIListLayout", {
-				Parent = scroll, SortOrder = Enum.SortOrder.LayoutOrder, Padding = udim(0, 4),
+			local v_u_98 = v_u_54("UIListLayout", {
+				Parent = v_u_97, SortOrder = Enum.SortOrder.LayoutOrder, Padding = v_u_9(0, 4),
 			})
-			N("UIPadding", {
-				Parent = scroll,
-				PaddingTop = udim(0, 3),
-				PaddingBottom = udim(0, 8),
-				PaddingLeft = udim(0, 3),
-				PaddingRight = udim(0, 3),
+			v_u_54("UIPadding", {
+				Parent = v_u_97,
+				PaddingTop = v_u_9(0, 3),
+				PaddingBottom = v_u_9(0, 16),
+				PaddingLeft = v_u_9(0, 3),
+				PaddingRight = v_u_9(0, 6),
 			})
-			layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-				scroll.CanvasSize = udim2(0, 0, 0, layout.AbsoluteContentSize.Y + 16)
+			v_u_98:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+				v_u_97.CanvasSize = v_u_7(0, 0, 0, v_u_98.AbsoluteContentSize.Y + 32)
 			end)
-			return scroll
+			return v_u_97
 		end
 
-		local leftScroll = makeScroll(0, 0.5)
-		local rightScroll = makeScroll(0.5, 0.5)
+		local v_u_99 = v_u_96(0, 0.5)
+		local v_u_100 = v_u_96(0.5, 0.5)
 
-		N("Frame", {
-			Parent = pg, Position = udim2(0.5, -1, 0, 5), Size = udim2(0, 1, 1, -10),
-			BackgroundColor3 = T.divider, BorderSizePixel = 0,
+		v_u_54("Frame", {
+			Parent = v_u_95, Position = v_u_7(0.5, -1, 0, 5), Size = v_u_7(0, 1, 1, -10),
+			BackgroundColor3 = v_u_64.divider, BorderSizePixel = 0,
 		})
 
-		pages[name] = { pg = pg, left = leftScroll, right = rightScroll }
-		table.insert(tabList, { name = name, sub = subText })
-		local idx = #tabList
+		v_u_89[name] = { pg = v_u_95, left = v_u_99, right = v_u_100 }
+		table.insert(v_u_87, { name = name, sub = subText })
+		local idx = #v_u_87
 
-		local bg = N("Frame", {
-			Parent = TabBar, BackgroundTransparency = 1, BorderSizePixel = 0,
+		local v_u_101 = v_u_54("Frame", {
+			Parent = v_u_83, BackgroundTransparency = 1, BorderSizePixel = 0,
 			ClipsDescendants = true, ZIndex = 6,
-			Size = udim2(0, TAB_SML, 1, 0),
+			Size = v_u_7(0, v_u_84, 1, 0),
 		})
-		local sq = N("Frame", {
-			Parent = bg, Size = udim2(0, 35, 0, 35), Position = udim2(0, 6, 0.5, -17.5),
-			BackgroundColor3 = T.card, BorderSizePixel = 0, ZIndex = 7,
+		local v_u_102 = v_u_54("Frame", {
+			Parent = v_u_101, Size = v_u_7(0, 35, 0, 35), Position = v_u_7(0, 6, 0.5, -17.5),
+			BackgroundColor3 = v_u_64.card, BorderSizePixel = 0, ZIndex = 7,
 		})
-		Corner(sq, 8)
-		local sqStr = Stroke(sq, T.border, 1)
-		local img = N("ImageLabel", {
-			Parent = sq, BackgroundTransparency = 1,
-			Size = udim2(0, ISMALL, 0, ISMALL),
-			Position = udim2(0.5, -ISMALL/2, 0.5, -ISMALL/2),
-			Image = GetIcon(iconKey), ImageColor3 = T.dim, ZIndex = 9,
+		v_u_50(v_u_102, 8)
+		local v_u_103 = v_u_52(v_u_102, v_u_64.border, 1)
+		local v_u_104 = v_u_54("ImageLabel", {
+			Parent = v_u_102, BackgroundTransparency = 1,
+			Size = v_u_7(0, v_u_86, 0, v_u_86),
+			Position = v_u_7(0.5, -v_u_86/2, 0.5, -v_u_86/2),
+			Image = v_u_56(iconKey), ImageColor3 = v_u_64.dim, ZIndex = 9,
 		})
-		local lbl = N("TextLabel", {
-			Parent = bg, BackgroundTransparency = 1,
-			Size = udim2(1, -48, 0, 14), Position = udim2(0, 46, 0.5, -12),
-			Font = font.GothamBold, Text = name,
-			TextColor3 = T.textPri, TextSize = 9,
+		local v_u_105 = v_u_54("TextLabel", {
+			Parent = v_u_101, BackgroundTransparency = 1,
+			Size = v_u_7(1, -48, 0, 14), Position = v_u_7(0, 46, 0.5, -12),
+			Font = v_u_15.GothamBold, Text = name,
+			TextColor3 = v_u_64.textPri, TextSize = 9,
 			TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 1, ZIndex = 7,
 		})
-		local sub_lbl = N("TextLabel", {
-			Parent = bg, BackgroundTransparency = 1,
-			Size = udim2(1, -48, 0, 10), Position = udim2(0, 46, 0.5, 2),
-			Font = font.Gotham, Text = subText,
-			TextColor3 = T.muted, TextSize = 7,
+		local v_u_106 = v_u_54("TextLabel", {
+			Parent = v_u_101, BackgroundTransparency = 1,
+			Size = v_u_7(1, -48, 0, 10), Position = v_u_7(0, 46, 0.5, 2),
+			Font = v_u_15.Gotham, Text = subText,
+			TextColor3 = v_u_64.muted, TextSize = 7,
 			TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 1, ZIndex = 7,
 		})
-		local btn = N("TextButton", {
-			Parent = bg, Size = udim2Scale(1, 1),
+		local v_u_107 = v_u_54("TextButton", {
+			Parent = v_u_101, Size = v_u_8(1, 1),
 			BackgroundTransparency = 1, Text = "", ZIndex = 12,
 		})
 
-		tabBtns[idx] = { name = name, bg = bg, sq = sq, str = sqStr, img = img, lbl = lbl, sub = sub_lbl }
+		v_u_88[idx] = { name = name, bg = v_u_101, sq = v_u_102, str = v_u_103, img = v_u_104, lbl = v_u_105, sub = v_u_106 }
 
-		local function getActiveIdx()
-			for i, t in ipairs(tabList) do
-				if t.name == curTab then return i end
+		local function v_u_108()
+			for i, t in ipairs(v_u_87) do
+				if t.name == v_u_90 then return i end
 			end
 			return idx
 		end
-		applyPos(curTab and getActiveIdx() or idx, false)
+		v_u_92(v_u_90 and v_u_108() or idx, false)
 
-		btn.MouseButton1Click:Connect(function() switchTab(name) end)
-		btn.MouseEnter:Connect(function()
-			if curTab ~= name then
-				Tw(sq, { BackgroundColor3 = T.elemHover }, 0.1)
-				Tw(img, { ImageColor3 = T.muted }, 0.1)
+		v_u_107.MouseButton1Click:Connect(function() v_u_93(name) end)
+		v_u_107.MouseEnter:Connect(function()
+			if v_u_90 ~= name then
+				v_u_49(v_u_102, { BackgroundColor3 = v_u_64.elemHover }, 0.1)
+				v_u_49(v_u_104, { ImageColor3 = v_u_64.muted }, 0.1)
 			end
 		end)
-		btn.MouseLeave:Connect(function()
-			if curTab ~= name then
-				Tw(sq, { BackgroundColor3 = T.card }, 0.1)
-				Tw(img, { ImageColor3 = T.dim }, 0.1)
+		v_u_107.MouseLeave:Connect(function()
+			if v_u_90 ~= name then
+				v_u_49(v_u_102, { BackgroundColor3 = v_u_64.card }, 0.1)
+				v_u_49(v_u_104, { ImageColor3 = v_u_64.dim }, 0.1)
 			end
 		end)
 
-		if #tabList == 1 then
-			curTab = name
-			pg.Visible = true
-			applyPos(1, false)
-			local tb = tabBtns[1]
-			tb.sq.BackgroundColor3 = T.accentDark
-			tb.str.Color = T.white
+		if #v_u_87 == 1 then
+			v_u_90 = name
+			v_u_95.Visible = true
+			v_u_92(1, false)
+			local tb = v_u_88[1]
+			tb.sq.BackgroundColor3 = v_u_64.accentDark
+			tb.str.Color = v_u_64.white
 			tb.str.Thickness = 1.5
-			tb.img.ImageColor3 = T.white
+			tb.img.ImageColor3 = v_u_64.white
 			tb.lbl.TextTransparency = 0
-			tb.lbl.TextColor3 = T.textPri
+			tb.lbl.TextColor3 = v_u_64.textPri
 			tb.sub.TextTransparency = 0
-			tb.sub.TextColor3 = T.muted
+			tb.sub.TextColor3 = v_u_64.muted
 		end
 
-		local tabApi = {}
-		local sectionOrder = { left = 0, right = 0 }
+		local v_u_109 = {}
+		local v_u_110 = { left = 0, right = 0 }
 
-		-- // Adicionar Seção
-		function tabApi:AddSection(side, text)
-			side = (side == "right") and "right" or "left"
-			local par = (side == "left") and leftScroll or rightScroll
-			sectionOrder[side] = sectionOrder[side] + 1
+		-- // Adicionar Secao
+		--[[
+			cfg.Box   string  "left" ou "right"
+			cfg.Name  string  titulo da secao
+			cfg.Icon  string  nome do icone (ex: "home", "settings")
 
-			local wrap = N("Frame", {
-				Size = udim2(1, 0, 0, 24), BackgroundColor3 = T.secBg,
-				BorderSizePixel = 0, LayoutOrder = sectionOrder[side],
-				ZIndex = 2, ClipsDescendants = true, Parent = par,
+			retorno:
+				:SetTitle(v)     altera titulo
+				:SetVisible(v)   mostra/oculta secao
+				:Destroy()       remove secao
+				+ todos os AddXxx()
+		]]
+		function v_u_109:AddSection(cfg)
+			cfg = cfg or {}
+			if type(cfg) == "string" then
+				cfg = { Name = cfg }
+			end
+			local v_u_111 = (cfg.Box == "right") and "right" or "left"
+			local v_u_112 = cfg.Name or cfg[1] or "Secao"
+			local v_u_113 = cfg.Icon or ""
+			local v_u_114 = (v_u_111 == "left") and v_u_99 or v_u_100
+			v_u_110[v_u_111] = v_u_110[v_u_111] + 1
+
+			local v_u_115 = v_u_54("Frame", {
+				Size = v_u_7(1, 0, 0, 28), BackgroundColor3 = v_u_64.secBg,
+				BorderSizePixel = 0, LayoutOrder = v_u_110[v_u_111],
+				ZIndex = 2, ClipsDescendants = true, Parent = v_u_114,
 			})
-			Corner(wrap, 6)
-			Stroke(wrap, T.secBord, 1, 0.5)
+			v_u_50(v_u_115, 6)
+			v_u_52(v_u_115, v_u_64.secBord, 1, 0.35)
 
-			local shimmer = N("Frame", {
-				Size = udim2(0, 80, 1, 0), Position = udim2(-0.4, 0, 0, 0),
-				BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 5, Parent = wrap,
+			-- // Efeito Shimmer na Secao
+			local v_u_116 = v_u_54("Frame", {
+				Size = v_u_7(0, 100, 1, 0), Position = v_u_7(-0.5, 0, 0, 0),
+				BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 5, Parent = v_u_115,
 			})
-			N("UIGradient", {
+			v_u_54("UIGradient", {
 				Color = ColorSequence.new({
-					ColorSequenceKeypoint.new(0, rgb(13, 13, 13)),
-					ColorSequenceKeypoint.new(0.5, rgb(130, 130, 148)),
-					ColorSequenceKeypoint.new(1, rgb(13, 13, 13)),
+					ColorSequenceKeypoint.new(0, v_u_10(13, 13, 13)),
+					ColorSequenceKeypoint.new(0.5, v_u_10(140, 140, 160)),
+					ColorSequenceKeypoint.new(1, v_u_10(13, 13, 13)),
 				}),
-				Parent = shimmer,
+				Transparency = NumberSequence.new({
+					NumberSequenceKeypoint.new(0, 1),
+					NumberSequenceKeypoint.new(0.45, 0.7),
+					NumberSequenceKeypoint.new(0.5, 0.6),
+					NumberSequenceKeypoint.new(0.55, 0.7),
+					NumberSequenceKeypoint.new(1, 1),
+				}),
+				Parent = v_u_116,
 			})
-			local secTitleLbl = N("TextLabel", {
-				Size = udim2(1, -18, 1, 0), Position = udim2(0, 10, 0, 0),
-				BackgroundTransparency = 1, Text = string.upper(tostring(text or "")),
-				TextColor3 = T.secText, TextSize = 9, Font = font.GothamBold,
-				TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 6, Parent = wrap,
+
+			-- // Icone da Secao
+			local v_u_117 = 0
+			if v_u_113 ~= "" then
+				local v_u_118 = v_u_54("Frame", {
+					Size = v_u_7(0, 18, 0, 18), Position = v_u_7(0, 7, 0.5, -9),
+					BackgroundColor3 = v_u_64.secIconBg,
+					BorderSizePixel = 0, ZIndex = 6, Parent = v_u_115,
+				})
+				v_u_50(v_u_118, 4)
+				v_u_54("ImageLabel", {
+					Parent = v_u_118, BackgroundTransparency = 1,
+					Size = v_u_7(0, 10, 0, 10), Position = v_u_7(0.5, -5, 0.5, -5),
+					Image = v_u_56(v_u_113), ImageColor3 = v_u_64.secIconClr, ZIndex = 7,
+				})
+				v_u_117 = 26
+			end
+
+			-- // Linha decorativa esquerda da secao
+			v_u_54("Frame", {
+				Size = v_u_7(0, 2, 0, 14), Position = v_u_7(0, 0, 0.5, -7),
+				BackgroundColor3 = v_u_64.secIconClr,
+				BorderSizePixel = 0, ZIndex = 6, Parent = v_u_115,
+			})
+
+			local v_u_119 = v_u_54("TextLabel", {
+				Size = v_u_7(1, -(v_u_117 + 22), 1, 0), Position = v_u_7(0, v_u_117 + 12, 0, 0),
+				BackgroundTransparency = 1, Text = string.upper(tostring(v_u_112 or "")),
+				TextColor3 = v_u_64.secText, TextSize = 9, Font = v_u_15.GothamBold,
+				TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 6, Parent = v_u_115,
 			})
 
 			task.spawn(function()
-				while wrap and wrap.Parent do
-					pcall(function() shimmer.Position = udim2(-0.4, 0, 0, 0) end)
-					task.wait(0.08)
-					Tw(shimmer, { Position = udim2(1.4, 0, 0, 0) }, 1.6, easingStyle.Linear)
-					task.wait(4.5)
+				while v_u_115 and v_u_115.Parent do
+					pcall(function() v_u_116.Position = v_u_7(-0.5, 0, 0, 0) end)
+					task.wait(0.1)
+					v_u_49(v_u_116, { Position = v_u_7(1.5, 0, 0, 0) }, 1.8, v_u_14.Linear)
+					task.wait(5)
 				end
 			end)
 
-			local secApi = {}
+			local v_u_120 = {}
+			local v_u_121 = v_u_110
 
-			local function mkBase(h)
-				sectionOrder[side] = sectionOrder[side] + 1
-				local f = N("Frame", {
-					Size = udim2(1, 0, 0, h), BackgroundColor3 = T.elBg,
-					BorderSizePixel = 0, LayoutOrder = sectionOrder[side], ZIndex = 3, Parent = par,
+			local function v_u_122(h)
+				v_u_121[v_u_111] = v_u_121[v_u_111] + 1
+				local f = v_u_54("Frame", {
+					Size = v_u_7(1, 0, 0, h), BackgroundColor3 = v_u_64.elBg,
+					BorderSizePixel = 0, LayoutOrder = v_u_121[v_u_111], ZIndex = 3, Parent = v_u_114,
 				})
-				Corner(f, 7)
-				Stroke(f, T.elBorder, 1, 0.25)
+				v_u_50(f, 7)
+				v_u_52(f, v_u_64.elBorder, 1, 0.25)
 				return f
 			end
 
-			local function applyDisabled(f, isDisabled)
+			local function v_u_123(f, isDisabled)
 				if not f then return end
-				Tw(f, { BackgroundColor3 = isDisabled and T.disabled or T.elBg }, 0.15)
+				v_u_49(f, { BackgroundColor3 = isDisabled and v_u_64.disabled or v_u_64.elBg }, 0.15)
+			end
+
+			local function v_u_124(parent, xOffset, hasDesc, descText)
+				local lbl = v_u_54("TextLabel", {
+					Size = v_u_7(1, -(xOffset + 8), 0, 13),
+					Position = v_u_7(0, xOffset, 0, 22),
+					BackgroundTransparency = 1,
+					Text = tostring(descText or ""),
+					TextColor3 = v_u_64.muted,
+					TextSize = 9, Font = v_u_15.Gotham,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextTruncate = Enum.TextTruncate.AtEnd,
+					Visible = hasDesc, ZIndex = 4, Parent = parent,
+				})
+				return lbl
 			end
 
 			-- // Label
-			function secApi:AddLabel(titulo, value, saveId)
-				local f = mkBase(EL_H)
-				RegEl(f, titulo or "")
+			--[[
+				cfg.Title        string   titulo exibido
+				cfg.Value        string   valor inicial (opcional)
+				cfg.Description  string   texto secundario abaixo do titulo (opcional)
+				cfg.SaveId       string   chave de save (opcional)
+				cfg.Callback     function(value: string)  chamado em :Set() (opcional)
 
-				local titleLbl = N("TextLabel", {
-					Size = udim2(0.55, -12, 1, 0),
-					Position = udim2(0, 12, 0, 0),
+				retorno:
+					:Set(v)              define valor e dispara callback
+					:Get()               retorna valor atual
+					:SetTitle(v)         altera titulo
+					:SetValue(v)         alias de Set
+					:SetDescription(v)   altera / mostra descricao dinamicamente
+					:SetColor(c)         cor do valor
+					:SetTitleColor(c)    cor do titulo
+					:SetColorTween(c,t)  transicao de cor do valor
+					:SetVisible(v)       mostra/oculta elemento
+					:Destroy()           remove elemento
+			]]
+			function v_u_120:AddLabel(cfg)
+				if type(cfg) == "string" then
+					cfg = { Title = cfg }
+				end
+				cfg = cfg or {}
+				local titulo = cfg.Title or "Label"
+				local value = cfg.Value or ""
+				local desc = cfg.Description or ""
+				local saveId = cfg.SaveId or ""
+				local callback = cfg.Callback
+
+				local hasDesc = desc and desc ~= ""
+				local h = hasDesc and v_u_66 or v_u_65
+				local f = v_u_122(h)
+				v_u_70(f, titulo)
+
+				local titleLbl = v_u_54("TextLabel", {
+					Size = v_u_7(0.55, -12, 0, 14),
+					Position = hasDesc and v_u_7(0, 12, 0, 8) or v_u_7(0, 12, 0.5, -7),
 					BackgroundTransparency = 1,
-					Text = titulo or "",
-					TextColor3 = T.textPri, TextSize = 11, Font = font.Gotham,
+					Text = titulo,
+					TextColor3 = v_u_64.textPri, TextSize = 11, Font = v_u_15.Gotham,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4, Parent = f,
 				})
-				local valueLbl = N("TextLabel", {
-					Size = udim2(0.45, -14, 1, 0),
-					Position = udim2(0.55, 0, 0, 0),
+
+				local valueLbl = v_u_54("TextLabel", {
+					Size = v_u_7(0.45, -14, 0, 14),
+					Position = hasDesc and v_u_7(0.55, 0, 0, 8) or v_u_7(0.55, 0, 0.5, -7),
 					BackgroundTransparency = 1,
-					Text = tostring(value or ""),
-					TextColor3 = T.labelVal, TextSize = 10, Font = font.GothamSemibold,
+					Text = tostring(value),
+					TextColor3 = v_u_64.labelVal, TextSize = 10, Font = v_u_15.GothamSemibold,
 					TextXAlignment = Enum.TextXAlignment.Right,
 					TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4, Parent = f,
 				})
 
-				if saveId and saveId ~= "" then
-					local saved = SaveGet(saveId)
+				local descLbl = v_u_124(f, 12, hasDesc, desc)
+
+				if saveId ~= "" then
+					local saved = v_u_47(saveId)
 					if saved ~= nil then valueLbl.Text = tostring(saved) end
 				end
 
 				return {
 					Set = function(_, v)
 						if valueLbl then valueLbl.Text = tostring(v) end
-						if saveId and saveId ~= "" then SaveSet(saveId, tostring(v)) end
+						if saveId ~= "" then v_u_48(saveId, tostring(v)) end
+						pcall(function() if callback then callback(tostring(v)) end end)
 					end,
 					Get = function(_) return valueLbl and valueLbl.Text or "" end,
 					SetTitle = function(_, v) if titleLbl then titleLbl.Text = tostring(v) end end,
 					SetValue = function(_, v)
 						if valueLbl then valueLbl.Text = tostring(v) end
-						if saveId and saveId ~= "" then SaveSet(saveId, tostring(v)) end
+						if saveId ~= "" then v_u_48(saveId, tostring(v)) end
+						pcall(function() if callback then callback(tostring(v)) end end)
+					end,
+					SetDescription = function(_, v)
+						if descLbl then
+							local nd = v and v ~= ""
+							descLbl.Text = tostring(v or "")
+							descLbl.Visible = nd
+							f.Size = v_u_7(1, 0, 0, nd and v_u_66 or v_u_65)
+						end
 					end,
 					SetColor = function(_, c) if valueLbl then valueLbl.TextColor3 = c end end,
 					SetTitleColor = function(_, c) if titleLbl then titleLbl.TextColor3 = c end end,
 					SetColorTween = function(_, c, t)
-						if valueLbl then Tw(valueLbl, { TextColor3 = c }, t or 0.2) end
+						if valueLbl then v_u_49(valueLbl, { TextColor3 = c }, t or 0.2) end
 					end,
 					SetVisible = function(_, v) if f then f.Visible = v ~= false end end,
 					Destroy = function(_) pcall(function() f:Destroy() end) end,
@@ -702,76 +852,98 @@ function EcoHub:CreateWindow(config)
 			end
 
 			-- // Toggle
-			function secApi:AddToggle(titulo, default, saveId, callback)
-				local state = default == true
+			--[[
+				cfg.Title        string   titulo exibido
+				cfg.Description  string   texto secundario abaixo do titulo (opcional)
+				cfg.Default      bool     estado inicial
+				cfg.SaveId       string   chave de save (opcional)
+				cfg.Callback     function(state: bool)
+
+				retorno:
+					:Set(v)              define estado sem disparar callback
+					:Get()               retorna estado atual
+					:SetEnabled(v)       habilita/desabilita interacao
+					:SetVisible(v)       mostra/oculta elemento
+					:SetTitle(v)         altera titulo
+					:SetDescription(v)   altera / mostra descricao dinamicamente
+					:SetCallback(fn)     substitui callback
+					:Toggle()            inverte estado e dispara callback
+					:Destroy()           remove elemento
+			]]
+			function v_u_120:AddToggle(cfg)
+				if type(cfg) == "string" then
+					cfg = { Title = cfg }
+				end
+				cfg = cfg or {}
+				local titulo = cfg.Title or "Toggle"
+				local desc = cfg.Description or ""
+				local saveId = cfg.SaveId or ""
+				local callback = cfg.Callback
+				local state = cfg.Default == true
 				local enabled = true
 
-				if saveId and saveId ~= "" then
-					local saved = SaveGet(saveId)
+				if saveId ~= "" then
+					local saved = v_u_47(saveId)
 					if saved ~= nil then state = (saved == true) end
 				end
 
-				local f = mkBase(EL_H)
-				RegEl(f, titulo)
+				local hasDesc = desc and desc ~= ""
+				local h = hasDesc and v_u_66 or v_u_65
+				local f = v_u_122(h)
+				v_u_70(f, titulo)
 
-				local titleLbl = N("TextLabel", {
-					Size = udim2(1, -70, 1, 0), Position = udim2(0, 12, 0, 0),
+				local titleLbl = v_u_54("TextLabel", {
+					Size = v_u_7(1, -70, 0, 14),
+					Position = hasDesc and v_u_7(0, 12, 0, 8) or v_u_7(0, 12, 0.5, -7),
 					BackgroundTransparency = 1, Text = titulo,
-					TextColor3 = T.textPri, TextSize = 11, Font = font.Gotham,
+					TextColor3 = v_u_64.textPri, TextSize = 11, Font = v_u_15.Gotham,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4, Parent = f,
 				})
-				local descLbl = N("TextLabel", {
-					Size = udim2(1, -70, 0, 11), Position = udim2(0, 12, 1, -12),
-					BackgroundTransparency = 1, Text = "",
-					TextColor3 = T.muted, TextSize = 9, Font = font.Gotham,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					TextTruncate = Enum.TextTruncate.AtEnd,
-					Visible = false, ZIndex = 4, Parent = f,
-				})
+				local descLbl = v_u_124(f, 12, hasDesc, desc)
 
 				local TW, TH = 34, 18
-				local track = N("Frame", {
-					Size = udim2(0, TW, 0, TH),
-					Position = udim2(1, -(TW+11), 0.5, -TH/2),
-					BackgroundColor3 = state and T.togOn or T.togOff,
+				local track = v_u_54("Frame", {
+					Size = v_u_7(0, TW, 0, TH),
+					Position = v_u_7(1, -(TW+11), 0.5, -TH/2),
+					BackgroundColor3 = state and v_u_64.togOn or v_u_64.togOff,
 					BorderSizePixel = 0, ZIndex = 5, Parent = f,
 				})
-				Corner(track, TH)
-				local tStr = Stroke(track, state and T.togBordOn or T.togBordOff, 1, 0.05)
+				v_u_50(track, TH)
+				local tStr = v_u_52(track, state and v_u_64.togBordOn or v_u_64.togBordOff, 1, 0.05)
 				local KSZ = 12
-				local knob = N("Frame", {
-					Size = udim2(0, KSZ, 0, KSZ),
-					Position = state and udim2(1, -(KSZ+3), 0.5, -KSZ/2) or udim2(0, 3, 0.5, -KSZ/2),
-					BackgroundColor3 = state and T.togKnobOn or T.togKnobOff,
+				local knob = v_u_54("Frame", {
+					Size = v_u_7(0, KSZ, 0, KSZ),
+					Position = state and v_u_7(1, -(KSZ+3), 0.5, -KSZ/2) or v_u_7(0, 3, 0.5, -KSZ/2),
+					BackgroundColor3 = state and v_u_64.togKnobOn or v_u_64.togKnobOff,
 					BorderSizePixel = 0, ZIndex = 6, Parent = track,
 				})
-				Corner(knob, KSZ)
+				v_u_50(knob, KSZ)
 
 				local function refresh(s)
-					Tw(track, { BackgroundColor3 = s and T.togOn or T.togOff }, 0.15)
-					Tw(knob, {
-						Position = s and udim2(1, -(KSZ+3), 0.5, -KSZ/2) or udim2(0, 3, 0.5, -KSZ/2),
-						BackgroundColor3 = s and T.togKnobOn or T.togKnobOff,
-					}, 0.15, easingStyle.Back)
-					Tw(tStr, { Color = s and T.togBordOn or T.togBordOff }, 0.13)
+					v_u_49(track, { BackgroundColor3 = s and v_u_64.togOn or v_u_64.togOff }, 0.15)
+					v_u_49(knob, {
+						Position = s and v_u_7(1, -(KSZ+3), 0.5, -KSZ/2) or v_u_7(0, 3, 0.5, -KSZ/2),
+						BackgroundColor3 = s and v_u_64.togKnobOn or v_u_64.togKnobOff,
+					}, 0.15, v_u_14.Back)
+					v_u_49(tStr, { Color = s and v_u_64.togBordOn or v_u_64.togBordOff }, 0.13)
 				end
 
-				local btn2 = N("TextButton", {
-					Size = udim2Scale(1, 1), BackgroundTransparency = 1, Text = "", ZIndex = 7, Parent = f,
+				local btn2 = v_u_54("TextButton", {
+					Size = v_u_8(1, 1), BackgroundTransparency = 1, Text = "", ZIndex = 7, Parent = f,
 				})
 				btn2.MouseButton1Click:Connect(function()
 					if not enabled then return end
 					state = not state
 					refresh(state)
-					SaveSet(saveId, state)
+					v_u_48(saveId, state)
 					local ok, err = pcall(function() if callback then callback(state) end end)
-					if not ok then NotifyError("Toggle", err) end
+					if not ok then v_u_58("Toggle", err) end
 				end)
-				btn2.MouseEnter:Connect(function() if enabled then Tw(f, { BackgroundColor3 = T.elBgHov }, 0.1) end end)
-				btn2.MouseLeave:Connect(function() if enabled then Tw(f, { BackgroundColor3 = T.elBg }, 0.1) end end)
+				btn2.MouseEnter:Connect(function() if enabled then v_u_49(f, { BackgroundColor3 = v_u_64.elBgHov }, 0.1) end end)
+				btn2.MouseLeave:Connect(function() if enabled then v_u_49(f, { BackgroundColor3 = v_u_64.elBg }, 0.1) end end)
 
-				if saveId and saveId ~= "" and SaveGet(saveId) ~= nil then
+				if saveId ~= "" and v_u_47(saveId) ~= nil then
 					pcall(function() if callback then callback(state) end end)
 				end
 
@@ -779,31 +951,31 @@ function EcoHub:CreateWindow(config)
 					Set = function(_, v)
 						state = v == true
 						refresh(state)
-						SaveSet(saveId, state)
+						v_u_48(saveId, state)
 					end,
 					Get = function(_) return state end,
 					SetEnabled = function(_, v)
 						enabled = v ~= false
-						applyDisabled(f, not enabled)
-						Tw(titleLbl, { TextColor3 = enabled and T.textPri or T.disabledTxt }, 0.15)
-						Tw(track, { BackgroundTransparency = enabled and 0 or 0.6 }, 0.15)
-						Tw(knob, { BackgroundTransparency = enabled and 0 or 0.6 }, 0.15)
+						v_u_123(f, not enabled)
+						v_u_49(titleLbl, { TextColor3 = enabled and v_u_64.textPri or v_u_64.disabledTxt }, 0.15)
+						v_u_49(track, { BackgroundTransparency = enabled and 0 or 0.6 }, 0.15)
+						v_u_49(knob, { BackgroundTransparency = enabled and 0 or 0.6 }, 0.15)
 					end,
 					SetVisible = function(_, v) if f then f.Visible = v ~= false end end,
 					SetTitle = function(_, v) if titleLbl then titleLbl.Text = tostring(v) end end,
 					SetDescription = function(_, v)
 						if descLbl then
+							local nd = v and v ~= ""
 							descLbl.Text = tostring(v or "")
-							descLbl.Visible = (v and v ~= "")
-							local h = (v and v ~= "") and 48 or EL_H
-							Tw(f, { Size = udim2(1, 0, 0, h) }, 0.15)
+							descLbl.Visible = nd
+							f.Size = v_u_7(1, 0, 0, nd and v_u_66 or v_u_65)
 						end
 					end,
 					SetCallback = function(_, fn) callback = fn end,
 					Toggle = function(_)
 						state = not state
 						refresh(state)
-						SaveSet(saveId, state)
+						v_u_48(saveId, state)
 						pcall(function() if callback then callback(state) end end)
 					end,
 					Destroy = function(_) pcall(function() f:Destroy() end) end,
@@ -811,73 +983,93 @@ function EcoHub:CreateWindow(config)
 			end
 
 			-- // Checkbox
-			function secApi:AddCheckbox(titulo, default, saveId, callback)
-				local state = default == true
+			--[[
+				cfg.Title        string   titulo exibido
+				cfg.Description  string   texto secundario abaixo do titulo (opcional)
+				cfg.Default      bool     estado inicial
+				cfg.SaveId       string   chave de save (opcional)
+				cfg.Callback     function(state: bool)
+
+				retorno:
+					:Set(v)              define estado sem disparar callback
+					:Get()               retorna estado atual
+					:SetEnabled(v)       habilita/desabilita interacao
+					:SetVisible(v)       mostra/oculta elemento
+					:SetTitle(v)         altera titulo
+					:SetDescription(v)   altera / mostra descricao dinamicamente
+					:SetCallback(fn)     substitui callback
+					:Toggle()            inverte estado e dispara callback
+					:Destroy()           remove elemento
+			]]
+			function v_u_120:AddCheckbox(cfg)
+				if type(cfg) == "string" then
+					cfg = { Title = cfg }
+				end
+				cfg = cfg or {}
+				local titulo = cfg.Title or "Checkbox"
+				local desc = cfg.Description or ""
+				local saveId = cfg.SaveId or ""
+				local callback = cfg.Callback
+				local state = cfg.Default == true
 				local enabled = true
 
-				if saveId and saveId ~= "" then
-					local saved = SaveGet(saveId)
+				if saveId ~= "" then
+					local saved = v_u_47(saveId)
 					if saved ~= nil then state = (saved == true) end
 				end
 
-				local f = mkBase(EL_H)
-				RegEl(f, titulo)
+				local hasDesc = desc and desc ~= ""
+				local h = hasDesc and v_u_66 or v_u_65
+				local f = v_u_122(h)
+				v_u_70(f, titulo)
 
 				local BSZ = 16
-				local box = N("Frame", {
-					Size = udim2(0, BSZ, 0, BSZ),
-					Position = udim2(0, 12, 0.5, -BSZ/2),
-					BackgroundColor3 = state and T.chkOn or T.chkOff,
+				local box = v_u_54("Frame", {
+					Size = v_u_7(0, BSZ, 0, BSZ),
+					Position = v_u_7(0, 12, 0.5, -BSZ/2),
+					BackgroundColor3 = state and v_u_64.chkOn or v_u_64.chkOff,
 					BorderSizePixel = 0, ZIndex = 5, Parent = f,
 				})
-				Corner(box, 4)
-				local bStr = Stroke(box, state and T.chkBordOn or T.chkBordOff, 1.5)
-				local chk = N("ImageLabel", {
-					Size = udim2(0, BSZ-6, 0, BSZ-6),
-					Position = udim2(0.5, -(BSZ-6)/2, 0.5, -(BSZ-6)/2),
-					BackgroundTransparency = 1, Image = GetIcon("check"),
-					ImageColor3 = state and T.chkKnobOn or T.chkKnobOff,
+				v_u_50(box, 4)
+				local bStr = v_u_52(box, state and v_u_64.chkBordOn or v_u_64.chkBordOff, 1.5)
+				local chk = v_u_54("ImageLabel", {
+					Size = v_u_7(0, BSZ-6, 0, BSZ-6),
+					Position = v_u_7(0.5, -(BSZ-6)/2, 0.5, -(BSZ-6)/2),
+					BackgroundTransparency = 1, Image = v_u_56("check"),
+					ImageColor3 = state and v_u_64.chkKnobOn or v_u_64.chkKnobOff,
 					ImageTransparency = state and 0 or 1, ZIndex = 6, Parent = box,
 				})
-				local titleLbl = N("TextLabel", {
-					Size = udim2(1, -(BSZ+26), 1, 0),
-					Position = udim2(0, BSZ+20, 0, 0),
+				local titleLbl = v_u_54("TextLabel", {
+					Size = v_u_7(1, -(BSZ+26), 0, 14),
+					Position = hasDesc and v_u_7(0, BSZ+20, 0, 8) or v_u_7(0, BSZ+20, 0.5, -7),
 					BackgroundTransparency = 1, Text = titulo,
-					TextColor3 = T.textPri, TextSize = 11, Font = font.Gotham,
+					TextColor3 = v_u_64.textPri, TextSize = 11, Font = v_u_15.Gotham,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 4, Parent = f,
 				})
-				local descLbl = N("TextLabel", {
-					Size = udim2(1, -(BSZ+26), 0, 11),
-					Position = udim2(0, BSZ+20, 1, -12),
-					BackgroundTransparency = 1, Text = "",
-					TextColor3 = T.muted, TextSize = 9, Font = font.Gotham,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					TextTruncate = Enum.TextTruncate.AtEnd,
-					Visible = false, ZIndex = 4, Parent = f,
-				})
+				local descLbl = v_u_124(f, BSZ + 20, hasDesc, desc)
 
 				local function refresh(s)
-					Tw(box, { BackgroundColor3 = s and T.chkOn or T.chkOff }, 0.14)
-					Tw(bStr, { Color = s and T.chkBordOn or T.chkBordOff }, 0.13)
-					Tw(chk, { ImageTransparency = s and 0 or 1, ImageColor3 = s and T.chkKnobOn or T.chkKnobOff }, 0.11)
+					v_u_49(box, { BackgroundColor3 = s and v_u_64.chkOn or v_u_64.chkOff }, 0.14)
+					v_u_49(bStr, { Color = s and v_u_64.chkBordOn or v_u_64.chkBordOff }, 0.13)
+					v_u_49(chk, { ImageTransparency = s and 0 or 1, ImageColor3 = s and v_u_64.chkKnobOn or v_u_64.chkKnobOff }, 0.11)
 				end
 
-				local btn2 = N("TextButton", {
-					Size = udim2Scale(1, 1), BackgroundTransparency = 1, Text = "", ZIndex = 7, Parent = f,
+				local btn2 = v_u_54("TextButton", {
+					Size = v_u_8(1, 1), BackgroundTransparency = 1, Text = "", ZIndex = 7, Parent = f,
 				})
 				btn2.MouseButton1Click:Connect(function()
 					if not enabled then return end
 					state = not state
 					refresh(state)
-					SaveSet(saveId, state)
+					v_u_48(saveId, state)
 					local ok, err = pcall(function() if callback then callback(state) end end)
-					if not ok then NotifyError("Checkbox", err) end
+					if not ok then v_u_58("Checkbox", err) end
 				end)
-				btn2.MouseEnter:Connect(function() if enabled then Tw(f, { BackgroundColor3 = T.elBgHov }, 0.1) end end)
-				btn2.MouseLeave:Connect(function() if enabled then Tw(f, { BackgroundColor3 = T.elBg }, 0.1) end end)
+				btn2.MouseEnter:Connect(function() if enabled then v_u_49(f, { BackgroundColor3 = v_u_64.elBgHov }, 0.1) end end)
+				btn2.MouseLeave:Connect(function() if enabled then v_u_49(f, { BackgroundColor3 = v_u_64.elBg }, 0.1) end end)
 
-				if saveId and saveId ~= "" and SaveGet(saveId) ~= nil then
+				if saveId ~= "" and v_u_47(saveId) ~= nil then
 					pcall(function() if callback then callback(state) end end)
 				end
 
@@ -885,31 +1077,31 @@ function EcoHub:CreateWindow(config)
 					Set = function(_, v)
 						state = v == true
 						refresh(state)
-						SaveSet(saveId, state)
+						v_u_48(saveId, state)
 					end,
 					Get = function(_) return state end,
 					SetEnabled = function(_, v)
 						enabled = v ~= false
-						applyDisabled(f, not enabled)
-						Tw(titleLbl, { TextColor3 = enabled and T.textPri or T.disabledTxt }, 0.15)
-						Tw(bStr, { Color = enabled and (state and T.chkBordOn or T.chkBordOff) or T.disabled }, 0.15)
-						Tw(box, { BackgroundTransparency = enabled and 0 or 0.5 }, 0.15)
+						v_u_123(f, not enabled)
+						v_u_49(titleLbl, { TextColor3 = enabled and v_u_64.textPri or v_u_64.disabledTxt }, 0.15)
+						v_u_49(bStr, { Color = enabled and (state and v_u_64.chkBordOn or v_u_64.chkBordOff) or v_u_64.disabled }, 0.15)
+						v_u_49(box, { BackgroundTransparency = enabled and 0 or 0.5 }, 0.15)
 					end,
 					SetVisible = function(_, v) if f then f.Visible = v ~= false end end,
 					SetTitle = function(_, v) if titleLbl then titleLbl.Text = tostring(v) end end,
 					SetDescription = function(_, v)
 						if descLbl then
+							local nd = v and v ~= ""
 							descLbl.Text = tostring(v or "")
-							descLbl.Visible = (v and v ~= "")
-							local h = (v and v ~= "") and 48 or EL_H
-							Tw(f, { Size = udim2(1, 0, 0, h) }, 0.15)
+							descLbl.Visible = nd
+							f.Size = v_u_7(1, 0, 0, nd and v_u_66 or v_u_65)
 						end
 					end,
 					SetCallback = function(_, fn) callback = fn end,
 					Toggle = function(_)
 						state = not state
 						refresh(state)
-						SaveSet(saveId, state)
+						v_u_48(saveId, state)
 						pcall(function() if callback then callback(state) end end)
 					end,
 					Destroy = function(_) pcall(function() f:Destroy() end) end,
@@ -917,29 +1109,59 @@ function EcoHub:CreateWindow(config)
 			end
 
 			-- // Button
-			function secApi:AddButton(titulo, saveId, callback)
+			--[[
+				cfg.Title        string   titulo exibido
+				cfg.Description  string   texto secundario abaixo do titulo (opcional)
+				cfg.Callback     function()
+
+				retorno:
+					:SetTitle(v)         altera titulo
+					:SetDescription(v)   altera / mostra descricao dinamicamente
+					:SetCallback(fn)     substitui callback
+					:SetEnabled(v)       habilita/desabilita interacao
+					:SetVisible(v)       mostra/oculta elemento
+					:SetLoading(v)       ativa/desativa spinner de carregamento
+					:SetIcon(iconName)   troca icone da seta
+					:Fire()              dispara callback programaticamente
+					:Destroy()           remove elemento
+			]]
+			function v_u_120:AddButton(cfg)
+				if type(cfg) == "string" then
+					cfg = { Title = cfg }
+				end
+				cfg = cfg or {}
+				local titulo = cfg.Title or "Button"
+				local desc = cfg.Description or ""
+				local saveId = cfg.SaveId or ""
+				local callback = cfg.Callback
 				local enabled = true
 				local loading = false
-				local f = mkBase(EL_H)
-				RegEl(f, titulo)
 
-				local titleLbl = N("TextLabel", {
-					Size = udim2(1, -40, 1, 0), Position = udim2(0, 12, 0, 0),
+				local hasDesc = desc and desc ~= ""
+				local h = hasDesc and v_u_66 or v_u_65
+				local f = v_u_122(h)
+				v_u_70(f, titulo)
+
+				local titleLbl = v_u_54("TextLabel", {
+					Size = v_u_7(1, -40, 0, 14),
+					Position = hasDesc and v_u_7(0, 12, 0, 8) or v_u_7(0, 12, 0.5, -7),
 					BackgroundTransparency = 1, Text = titulo,
-					TextColor3 = T.textPri, TextSize = 11, Font = font.GothamSemibold,
+					TextColor3 = v_u_64.textPri, TextSize = 11, Font = v_u_15.GothamSemibold,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 5, Parent = f,
 				})
-				local arrow = N("ImageLabel", {
-					Size = udim2(0, 10, 0, 10), Position = udim2(1, -20, 0.5, -5),
-					BackgroundTransparency = 1, Image = GetIcon("chevron-right"),
-					ImageColor3 = T.textDim, ZIndex = 5, Parent = f,
+				local descLbl = v_u_124(f, 12, hasDesc, desc)
+
+				local arrow = v_u_54("ImageLabel", {
+					Size = v_u_7(0, 10, 0, 10), Position = v_u_7(1, -20, 0.5, -5),
+					BackgroundTransparency = 1, Image = v_u_56("chevron-right"),
+					ImageColor3 = v_u_64.textDim, ZIndex = 5, Parent = f,
 				})
 
-				local spinnerLbl = N("TextLabel", {
-					Size = udim2(0, 13, 0, 13), Position = udim2(1, -20, 0.5, -6.5),
+				local spinnerLbl = v_u_54("TextLabel", {
+					Size = v_u_7(0, 13, 0, 13), Position = v_u_7(1, -20, 0.5, -6.5),
 					BackgroundTransparency = 1, Text = "○",
-					TextColor3 = T.muted, TextSize = 12, Font = font.GothamBold,
+					TextColor3 = v_u_64.muted, TextSize = 12, Font = v_u_15.GothamBold,
 					TextXAlignment = Enum.TextXAlignment.Center,
 					Visible = false, ZIndex = 5, Parent = f,
 				})
@@ -951,7 +1173,7 @@ function EcoHub:CreateWindow(config)
 				local function startSpin()
 					spinnerLbl.Visible = true
 					arrow.Visible = false
-					spinConn = RunService.Heartbeat:Connect(function()
+					spinConn = v_u_3.Heartbeat:Connect(function()
 						spinIdx = (spinIdx % #spinChars) + 1
 						spinnerLbl.Text = spinChars[spinIdx]
 					end)
@@ -963,53 +1185,61 @@ function EcoHub:CreateWindow(config)
 					arrow.Visible = enabled
 				end
 
-				local btn2 = N("TextButton", {
-					Size = udim2Scale(1, 1), BackgroundTransparency = 1, Text = "", ZIndex = 7, Parent = f,
+				local btn2 = v_u_54("TextButton", {
+					Size = v_u_8(1, 1), BackgroundTransparency = 1, Text = "", ZIndex = 7, Parent = f,
 				})
 				btn2.MouseEnter:Connect(function()
 					if not enabled or loading then return end
-					Tw(f, { BackgroundColor3 = T.elBgHov }, 0.1)
-					Tw(arrow, { ImageColor3 = T.white }, 0.1)
+					v_u_49(f, { BackgroundColor3 = v_u_64.elBgHov }, 0.1)
+					v_u_49(arrow, { ImageColor3 = v_u_64.white }, 0.1)
 				end)
 				btn2.MouseLeave:Connect(function()
 					if not enabled or loading then return end
-					Tw(f, { BackgroundColor3 = T.elBg }, 0.1)
-					Tw(arrow, { ImageColor3 = T.textDim }, 0.1)
+					v_u_49(f, { BackgroundColor3 = v_u_64.elBg }, 0.1)
+					v_u_49(arrow, { ImageColor3 = v_u_64.textDim }, 0.1)
 				end)
 				btn2.MouseButton1Down:Connect(function()
-					if enabled and not loading then Tw(f, { BackgroundColor3 = T.elBgPress }, 0.06) end
+					if enabled and not loading then v_u_49(f, { BackgroundColor3 = v_u_64.elBgPress }, 0.06) end
 				end)
 				btn2.MouseButton1Up:Connect(function()
-					if enabled and not loading then Tw(f, { BackgroundColor3 = T.elBgHov }, 0.06) end
+					if enabled and not loading then v_u_49(f, { BackgroundColor3 = v_u_64.elBgHov }, 0.06) end
 				end)
 				btn2.MouseButton1Click:Connect(function()
 					if not enabled or loading then return end
 					local ok, err = pcall(function() if callback then callback() end end)
-					if not ok then NotifyError("Button", err) end
+					if not ok then v_u_58("Button", err) end
 				end)
 
 				return {
 					SetTitle = function(_, v) if titleLbl then titleLbl.Text = tostring(v) end end,
+					SetDescription = function(_, v)
+						if descLbl then
+							local nd = v and v ~= ""
+							descLbl.Text = tostring(v or "")
+							descLbl.Visible = nd
+							f.Size = v_u_7(1, 0, 0, nd and v_u_66 or v_u_65)
+						end
+					end,
 					SetCallback = function(_, fn) callback = fn end,
 					SetEnabled = function(_, v)
 						enabled = v ~= false
-						applyDisabled(f, not enabled)
-						Tw(titleLbl, { TextColor3 = enabled and T.textPri or T.disabledTxt }, 0.15)
-						Tw(arrow, { ImageColor3 = enabled and T.textDim or T.dim }, 0.15)
+						v_u_123(f, not enabled)
+						v_u_49(titleLbl, { TextColor3 = enabled and v_u_64.textPri or v_u_64.disabledTxt }, 0.15)
+						v_u_49(arrow, { ImageColor3 = enabled and v_u_64.textDim or v_u_64.dim }, 0.15)
 					end,
 					SetVisible = function(_, v) if f then f.Visible = v ~= false end end,
 					SetLoading = function(_, v)
 						loading = v == true
 						if loading then
 							startSpin()
-							Tw(titleLbl, { TextColor3 = T.muted }, 0.15)
+							v_u_49(titleLbl, { TextColor3 = v_u_64.muted }, 0.15)
 						else
 							stopSpin()
-							Tw(titleLbl, { TextColor3 = enabled and T.textPri or T.disabledTxt }, 0.15)
+							v_u_49(titleLbl, { TextColor3 = enabled and v_u_64.textPri or v_u_64.disabledTxt }, 0.15)
 						end
 					end,
 					SetIcon = function(_, iconName)
-						if arrow then arrow.Image = GetIcon(iconName) end
+						if arrow then arrow.Image = v_u_56(iconName) end
 					end,
 					Fire = function(_)
 						if enabled and not loading then
@@ -1024,65 +1254,114 @@ function EcoHub:CreateWindow(config)
 			end
 
 			-- // Slider
-			function secApi:AddSlider(titulo, minV, maxV, defV, saveId, callback, step)
-				minV = minV or 0
-				maxV = maxV or 100
-				step = step or 1
+			--[[
+				cfg.Title        string   titulo exibido
+				cfg.Description  string   texto secundario abaixo do titulo (opcional)
+				cfg.Default      number   valor inicial
+				cfg.Min          number   valor minimo
+				cfg.Max          number   valor maximo
+				cfg.Rounding     number   step / casas decimais (ex: 0.1 ou 1)
+				cfg.Suffix       string   sufixo exibido (ex: "px", "%")
+				cfg.SaveId       string   chave de save (opcional)
+				cfg.Callback     function(value: number)
 
-				local val = clamp(defV or minV, minV, maxV)
+				retorno:
+					:Set(v)              define valor e dispara callback
+					:Get()               retorna valor atual
+					:SetMin(v)           altera minimo
+					:SetMax(v)           altera maximo
+					:SetStep(v)          altera step
+					:SetSuffix(s)        altera sufixo
+					:SetDescription(v)   altera / mostra descricao dinamicamente
+					:SetEnabled(v)       habilita/desabilita interacao
+					:SetVisible(v)       mostra/oculta elemento
+					:SetTitle(v)         altera titulo
+					:SetCallback(fn)     substitui callback
+					:Destroy()           remove elemento e desconecta eventos
+			]]
+			function v_u_120:AddSlider(cfg)
+				if type(cfg) == "string" then
+					cfg = { Title = cfg }
+				end
+				cfg = cfg or {}
+				local titulo = cfg.Title or "Slider"
+				local desc = cfg.Description or ""
+				local saveId = cfg.SaveId or ""
+				local callback = cfg.Callback
+				local minV = cfg.Min or 0
+				local maxV = cfg.Max or 100
+				local step = cfg.Rounding or 1
+				local suffix = cfg.Suffix or ""
+
+				local val = v_u_16(cfg.Default or minV, minV, maxV)
 				local enabled = true
 				local drag = false
-				local suffix = ""
 
-				if saveId and saveId ~= "" then
-					local saved = SaveGet(saveId)
+				if saveId ~= "" then
+					local saved = v_u_47(saveId)
 					if saved ~= nil then
-						val = clamp(tonumber(saved) or val, minV, maxV)
+						val = v_u_16(tonumber(saved) or val, minV, maxV)
 					end
 				end
 
-				local PAD = 12
+				local hasDesc = desc and desc ~= ""
 				local RAIL_H = 18
-				local pct = (val - minV) / math.max(maxV - minV, 0.001)
-
-				local f = mkBase(44)
-				RegEl(f, titulo)
+				local PAD = 12
+				local sliderH = hasDesc and 60 or 44
+				local f = v_u_122(sliderH)
+				v_u_70(f, titulo)
 
 				local function fmtVal(vv)
-					local base = (step < 1) and format("%.2f", vv) or tostring(round(vv))
+					local base = (step < 1) and v_u_18("%.2f", vv) or tostring(v_u_17(vv))
 					return base .. suffix
 				end
 
-				local titleLbl = N("TextLabel", {
-					Size = udim2(1, -(PAD * 2), 0, 12),
-					Position = udim2(0, PAD, 0, 6),
+				local titleLbl = v_u_54("TextLabel", {
+					Size = v_u_7(1, -(PAD * 2), 0, 12),
+					Position = v_u_7(0, PAD, 0, hasDesc and 4 or 6),
 					BackgroundTransparency = 1, Text = titulo,
-					TextColor3 = T.textPri, TextSize = 10, Font = font.Gotham,
+					TextColor3 = v_u_64.textPri, TextSize = 10, Font = v_u_15.Gotham,
 					TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 4, Parent = f,
 				})
 
-				local rail = N("Frame", {
-					Size = udim2(1, -(PAD * 2), 0, RAIL_H),
-					Position = udim2(0, PAD, 0, 21),
-					BackgroundColor3 = rgb(38, 38, 42),
+				local descLbl = nil
+				if hasDesc then
+					descLbl = v_u_54("TextLabel", {
+						Size = v_u_7(1, -(PAD * 2), 0, 11),
+						Position = v_u_7(0, PAD, 0, 18),
+						BackgroundTransparency = 1, Text = desc,
+						TextColor3 = v_u_64.muted, TextSize = 9, Font = v_u_15.Gotham,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+						ZIndex = 4, Parent = f,
+					})
+				end
+
+				local railY = hasDesc and 32 or 22
+				local pct = (val - minV) / math.max(maxV - minV, 0.001)
+
+				local rail = v_u_54("Frame", {
+					Size = v_u_7(1, -(PAD * 2), 0, RAIL_H),
+					Position = v_u_7(0, PAD, 0, railY),
+					BackgroundColor3 = v_u_10(38, 38, 42),
 					BorderSizePixel = 0, ZIndex = 4, Parent = f,
 				})
-				Corner(rail, 5)
-				Stroke(rail, rgb(50, 50, 56), 1, 0.5)
+				v_u_50(rail, 5)
+				v_u_52(rail, v_u_10(50, 50, 56), 1, 0.5)
 
-				local fill = N("Frame", {
-					Size = udim2(pct, 0, 1, 0),
-					BackgroundColor3 = rgb(255, 255, 255),
+				local fill = v_u_54("Frame", {
+					Size = v_u_7(pct, 0, 1, 0),
+					BackgroundColor3 = v_u_10(255, 255, 255),
 					BorderSizePixel = 0, ZIndex = 5, Parent = rail,
 				})
-				Corner(fill, 5)
+				v_u_50(fill, 5)
 
-				local valLbl = N("TextLabel", {
-					Size = udim2Scale(1, 1),
+				local valLbl = v_u_54("TextLabel", {
+					Size = v_u_8(1, 1),
 					BackgroundTransparency = 1,
 					Text = fmtVal(val) .. " / " .. fmtVal(maxV),
-					TextColor3 = rgb(110, 110, 116),
-					TextSize = 9, Font = font.GothamBold,
+					TextColor3 = v_u_10(110, 110, 116),
+					TextSize = 9, Font = v_u_15.GothamBold,
 					TextXAlignment = Enum.TextXAlignment.Center,
 					TextYAlignment = Enum.TextYAlignment.Center,
 					ZIndex = 7, Parent = rail,
@@ -1096,21 +1375,21 @@ function EcoHub:CreateWindow(config)
 
 				local function setVal(vv, silent)
 					if not enabled then return end
-					if step > 0 then vv = round(vv / step) * step end
-					val = clamp(round(vv * 1000) / 1000, minV, maxV)
+					if step > 0 then vv = v_u_17(vv / step) * step end
+					val = v_u_16(v_u_17(vv * 1000) / 1000, minV, maxV)
 					local p = (val - minV) / math.max(maxV - minV, 0.001)
-					fill.Size = udim2(p, 0, 1, 0)
+					fill.Size = v_u_7(p, 0, 1, 0)
 					updateLabel()
-					if not silent then SaveSet(saveId, val) end
+					if not silent then v_u_48(saveId, val) end
 					if not silent then
 						local ok, err = pcall(function() if callback then callback(val) end end)
-						if not ok then NotifyError("Slider", err) end
+						if not ok then v_u_58("Slider", err) end
 					end
 				end
 
-				local hit = N("TextButton", {
-					Size = udim2(1, 0, 0, RAIL_H + 14),
-					Position = udim2(0, 0, 0.5, -(RAIL_H + 14) / 2),
+				local hit = v_u_54("TextButton", {
+					Size = v_u_7(1, 0, 0, RAIL_H + 14),
+					Position = v_u_7(0, 0, 0.5, -(RAIL_H + 14) / 2),
 					BackgroundTransparency = 1, Text = "", ZIndex = 8, Parent = rail,
 				})
 
@@ -1121,32 +1400,32 @@ function EcoHub:CreateWindow(config)
 					drag = true
 					if not rail or not rail.Parent then return end
 					local ab, sz = rail.AbsolutePosition, rail.AbsoluteSize
-					setVal(minV + (maxV - minV) * clamp((inp.Position.X - ab.X) / sz.X, 0, 1))
+					setVal(minV + (maxV - minV) * v_u_16((inp.Position.X - ab.X) / sz.X, 0, 1))
 				end)
 				hit.MouseEnter:Connect(function()
-					if enabled then Tw(f, { BackgroundColor3 = T.elBgHov }, 0.1) end
+					if enabled then v_u_49(f, { BackgroundColor3 = v_u_64.elBgHov }, 0.1) end
 				end)
 				hit.MouseLeave:Connect(function()
-					if enabled then Tw(f, { BackgroundColor3 = T.elBg }, 0.1) end
+					if enabled then v_u_49(f, { BackgroundColor3 = v_u_64.elBg }, 0.1) end
 				end)
 
-				local slMoveConn = UserInputService.InputChanged:Connect(function(inp)
+				local slMoveConn = v_u_2.InputChanged:Connect(function(inp)
 					if not drag or not enabled then return end
 					if inp.UserInputType ~= Enum.UserInputType.MouseMovement
 						and inp.UserInputType ~= Enum.UserInputType.Touch then return end
 					if not rail or not rail.Parent then return end
 					local ab, sz = rail.AbsolutePosition, rail.AbsoluteSize
-					setVal(minV + (maxV - minV) * clamp((inp.Position.X - ab.X) / sz.X, 0, 1))
+					setVal(minV + (maxV - minV) * v_u_16((inp.Position.X - ab.X) / sz.X, 0, 1))
 				end)
 
-				local slEndConn = UserInputService.InputEnded:Connect(function(inp)
+				local slEndConn = v_u_2.InputEnded:Connect(function(inp)
 					if inp.UserInputType == Enum.UserInputType.MouseButton1
 						or inp.UserInputType == Enum.UserInputType.Touch then
 						drag = false
 					end
 				end)
 
-				if saveId and saveId ~= "" and SaveGet(saveId) ~= nil then
+				if saveId ~= "" and v_u_47(saveId) ~= nil then
 					pcall(function() if callback then callback(val) end end)
 				end
 
@@ -1171,13 +1450,23 @@ function EcoHub:CreateWindow(config)
 						suffix = tostring(s or "")
 						updateLabel()
 					end,
+					SetDescription = function(_, v)
+						if descLbl then
+							local nd = v and v ~= ""
+							descLbl.Text = tostring(v or "")
+							descLbl.Visible = nd
+							local newH = nd and 60 or 44
+							f.Size = v_u_7(1, 0, 0, newH)
+							rail.Position = v_u_7(0, PAD, 0, nd and 32 or 22)
+						end
+					end,
 					SetEnabled = function(_, vv)
 						enabled = vv ~= false
 						drag = false
-						applyDisabled(f, not enabled)
-						Tw(titleLbl, { TextColor3 = enabled and T.textPri or T.disabledTxt }, 0.15)
-						Tw(fill, { BackgroundColor3 = enabled and rgb(255, 255, 255) or T.dim }, 0.15)
-						Tw(valLbl, { TextColor3 = enabled and rgb(110, 110, 116) or T.disabledTxt }, 0.15)
+						v_u_123(f, not enabled)
+						v_u_49(titleLbl, { TextColor3 = enabled and v_u_64.textPri or v_u_64.disabledTxt }, 0.15)
+						v_u_49(fill, { BackgroundColor3 = enabled and v_u_10(255, 255, 255) or v_u_64.dim }, 0.15)
+						v_u_49(valLbl, { TextColor3 = enabled and v_u_10(110, 110, 116) or v_u_64.disabledTxt }, 0.15)
 					end,
 					SetVisible = function(_, vv) if f then f.Visible = vv ~= false end end,
 					SetTitle = function(_, vv) if titleLbl then titleLbl.Text = tostring(vv) end end,
@@ -1192,9 +1481,41 @@ function EcoHub:CreateWindow(config)
 			end
 
 			-- // Dropdown
-			function secApi:AddDropdown(titulo, options, defV, saveId, callback)
-				options = options or {}
-				local selected = defV or options[1] or ""
+			--[[
+				cfg.Title        string   titulo exibido
+				cfg.Description  string   texto secundario abaixo do titulo (opcional)
+				cfg.Options      table    lista de strings com as opcoes
+				cfg.Default      string   opcao selecionada inicialmente
+				cfg.SaveId       string   chave de save (opcional)
+				cfg.Players      bool     se true, auto-preenche com jogadores em tempo real
+				cfg.Callback     function(selected: string)
+
+				retorno:
+					:Set(v)              define opcao selecionada
+					:Get()               retorna opcao atual
+					:SetOptions(o)       substitui lista de opcoes
+					:AddOption(opt)      adiciona opcao se ainda nao existir
+					:RemoveOption(opt)   remove opcao e reseta selecao se necessario
+					:SetPlaceholder(txt) texto exibido quando nada esta selecionado
+					:SetDescription(v)   altera / mostra descricao dinamicamente
+					:SetEnabled(v)       habilita/desabilita interacao
+					:SetVisible(v)       mostra/oculta elemento
+					:SetTitle(v)         altera titulo
+					:SetCallback(fn)     substitui callback
+					:Destroy()           remove elemento
+			]]
+			function v_u_120:AddDropdown(cfg)
+				if type(cfg) == "string" then
+					cfg = { Title = cfg }
+				end
+				cfg = cfg or {}
+				local titulo = cfg.Title or "Dropdown"
+				local desc = cfg.Description or ""
+				local saveId = cfg.SaveId or ""
+				local callback = cfg.Callback
+				local options = cfg.Options or {}
+				local isPlayers = cfg.Players == true
+				local selected = cfg.Default or options[1] or ""
 				local enabled = true
 				local open = false
 				local placeholder = ""
@@ -1202,77 +1523,102 @@ function EcoHub:CreateWindow(config)
 				local MAX_VISIBLE = 5
 				local GAP = 4
 
-				if saveId and saveId ~= "" then
-					local saved = SaveGet(saveId)
+				-- // Auto-fill jogadores em tempo real
+				if isPlayers then
+					options = v_u_61()
+					if #options > 0 and selected == "" then selected = options[1] end
+				end
+
+				if saveId ~= "" then
+					local saved = v_u_47(saveId)
 					if saved ~= nil then selected = tostring(saved) end
 				end
 
-				sectionOrder[side] = sectionOrder[side] + 1
-				local wrap = N("Frame", {
-					Size = udim2(1, 0, 0, EL_H),
-					BackgroundTransparency = 1, ClipsDescendants = false,
-					LayoutOrder = sectionOrder[side], ZIndex = 10, Parent = par,
-				})
-				RegEl(wrap, titulo)
+				local hasDesc = desc and desc ~= ""
+				local baseH = hasDesc and v_u_66 or v_u_65
 
-				local header = N("Frame", {
-					Size = udim2(1, 0, 0, EL_H),
-					BackgroundColor3 = T.elBg,
+				v_u_110[v_u_111] = v_u_110[v_u_111] + 1
+				local wrap = v_u_54("Frame", {
+					Size = v_u_7(1, 0, 0, baseH),
+					BackgroundTransparency = 1, ClipsDescendants = false,
+					LayoutOrder = v_u_110[v_u_111], ZIndex = 10, Parent = v_u_114,
+				})
+				v_u_70(wrap, titulo)
+
+				local header = v_u_54("Frame", {
+					Size = v_u_7(1, 0, 0, baseH),
+					BackgroundColor3 = v_u_64.elBg,
 					BorderSizePixel = 0, ZIndex = 11, Parent = wrap,
 				})
-				Corner(header, 7)
+				v_u_50(header, 7)
+				v_u_52(header, v_u_64.elBorder, 1, 0.25)
 
-				local titleLbl = N("TextLabel", {
-					Size = udim2(0.55, -16, 1, 0), Position = udim2(0, 12, 0, 0),
+				local titleLbl = v_u_54("TextLabel", {
+					Size = v_u_7(0.55, -16, 0, 14),
+					Position = hasDesc and v_u_7(0, 12, 0, 8) or v_u_7(0, 12, 0.5, -7),
 					BackgroundTransparency = 1, Text = titulo,
-					TextColor3 = T.textPri, TextSize = 11, Font = font.Gotham,
+					TextColor3 = v_u_64.textPri, TextSize = 11, Font = v_u_15.Gotham,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 12, Parent = header,
 				})
-				local selLbl = N("TextLabel", {
-					Size = udim2(0.45, -28, 1, 0), Position = udim2(0.55, 0, 0, 0),
+				local descLbl = hasDesc and v_u_124(header, 12, true, desc) or nil
+
+				local selLbl = v_u_54("TextLabel", {
+					Size = v_u_7(0.45, -28, 0, 14),
+					Position = hasDesc and v_u_7(0.55, 0, 0, 8) or v_u_7(0.55, 0, 0.5, -7),
 					BackgroundTransparency = 1, Text = selected,
-					TextColor3 = T.textSec, TextSize = 10, Font = font.Gotham,
+					TextColor3 = v_u_64.textSec, TextSize = 10, Font = v_u_15.Gotham,
 					TextXAlignment = Enum.TextXAlignment.Right,
 					TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 12, Parent = header,
 				})
-				local arrowIcon = N("ImageLabel", {
-					Size = udim2(0, 10, 0, 10),
-					Position = udim2(1, -19, 0.5, -5),
-					BackgroundTransparency = 1, Image = GetIcon("chevron-down"),
-					ImageColor3 = rgb(80, 80, 88), ZIndex = 13, Parent = header,
+				local arrowIcon = v_u_54("ImageLabel", {
+					Size = v_u_7(0, 10, 0, 10),
+					Position = v_u_7(1, -19, 0.5, -5),
+					BackgroundTransparency = 1, Image = v_u_56("chevron-down"),
+					ImageColor3 = v_u_10(80, 80, 88), ZIndex = 13, Parent = header,
 				})
 
-				local panel = N("Frame", {
-					Size = udim2(1, 0, 0, 0),
-					Position = udim2(0, 0, 0, EL_H + GAP),
-					BackgroundColor3 = rgb(19, 19, 22),
+				-- // Icone jogadores em tempo real
+				if isPlayers then
+					v_u_54("ImageLabel", {
+						Size = v_u_7(0, 10, 0, 10),
+						Position = v_u_7(0, 12, 0.5, -5),
+						BackgroundTransparency = 1, Image = v_u_56("users"),
+						ImageColor3 = v_u_64.muted, ZIndex = 13, Parent = header,
+					})
+					titleLbl.Position = hasDesc and v_u_7(0, 26, 0, 8) or v_u_7(0, 26, 0.5, -7)
+				end
+
+				local panel = v_u_54("Frame", {
+					Size = v_u_7(1, 0, 0, 0),
+					Position = v_u_7(0, 0, 0, baseH + GAP),
+					BackgroundColor3 = v_u_10(19, 19, 22),
 					BorderSizePixel = 0, ClipsDescendants = true,
 					ZIndex = 20, Parent = wrap,
 				})
-				Corner(panel, 8)
+				v_u_50(panel, 8)
 
-				local listScroll = N("ScrollingFrame", {
-					Size = udim2Scale(1, 1),
+				local listScroll = v_u_54("ScrollingFrame", {
+					Size = v_u_8(1, 1),
 					BackgroundTransparency = 1,
 					ScrollBarThickness = 2,
-					ScrollBarImageColor3 = rgb(50, 50, 58),
+					ScrollBarImageColor3 = v_u_10(50, 50, 58),
 					ScrollingDirection = Enum.ScrollingDirection.Y,
-					CanvasSize = udim2(0, 0, 0, 0),
+					CanvasSize = v_u_7(0, 0, 0, 0),
 					AutomaticCanvasSize = Enum.AutomaticSize.Y,
 					ElasticBehavior = Enum.ElasticBehavior.Never,
 					ZIndex = 21, Parent = panel,
 				})
-				N("UIListLayout", {
+				v_u_54("UIListLayout", {
 					SortOrder = Enum.SortOrder.LayoutOrder,
-					Padding = udim(0, 0),
+					Padding = v_u_9(0, 0),
 					Parent = listScroll,
 				})
-				N("UIPadding", {
-					PaddingTop = udim(0, 4),
-					PaddingBottom = udim(0, 4),
-					PaddingLeft = udim(0, 4),
-					PaddingRight = udim(0, 4),
+				v_u_54("UIPadding", {
+					PaddingTop = v_u_9(0, 4),
+					PaddingBottom = v_u_9(0, 4),
+					PaddingLeft = v_u_9(0, 4),
+					PaddingRight = v_u_9(0, 4),
 					Parent = listScroll,
 				})
 
@@ -1282,10 +1628,10 @@ function EcoHub:CreateWindow(config)
 
 				local function closeDropdown()
 					open = false
-					Tw(panel, { Size = udim2(1, 0, 0, 0) }, 0.2, easingStyle.Quint)
-					Tw(wrap, { Size = udim2(1, 0, 0, EL_H) }, 0.2, easingStyle.Quint)
-					Tw(arrowIcon, { Rotation = 0, ImageColor3 = rgb(80, 80, 88) }, 0.16)
-					Tw(header, { BackgroundColor3 = T.elBg }, 0.14)
+					v_u_49(panel, { Size = v_u_7(1, 0, 0, 0) }, 0.2, v_u_14.Quint)
+					v_u_49(wrap, { Size = v_u_7(1, 0, 0, baseH) }, 0.2, v_u_14.Quint)
+					v_u_49(arrowIcon, { Rotation = 0, ImageColor3 = v_u_10(80, 80, 88) }, 0.16)
+					v_u_49(header, { BackgroundColor3 = v_u_64.elBg }, 0.14)
 				end
 
 				local function buildItems()
@@ -1296,86 +1642,107 @@ function EcoHub:CreateWindow(config)
 					end
 					for i, opt in ipairs(options) do
 						local isSel = opt == selected
-						local BG_SEL = rgb(32, 32, 38)
-						local BG_IDLE = rgb(19, 19, 22)
-						local BG_HOV = rgb(27, 27, 33)
+						local BG_SEL = v_u_10(32, 32, 38)
+						local BG_IDLE = v_u_10(19, 19, 22)
+						local BG_HOV = v_u_10(27, 27, 33)
 
-						local row = N("Frame", {
-							Size = udim2(1, 0, 0, ITEM_H),
+						local row = v_u_54("Frame", {
+							Size = v_u_7(1, 0, 0, ITEM_H),
 							BackgroundColor3 = isSel and BG_SEL or BG_IDLE,
 							BackgroundTransparency = 0,
 							BorderSizePixel = 0, LayoutOrder = i, ZIndex = 22, Parent = listScroll,
 						})
-						Corner(row, 5)
+						v_u_50(row, 5)
 
-						N("TextLabel", {
-							Size = udim2(1, -24, 1, 0),
+						v_u_54("TextLabel", {
+							Size = v_u_7(1, -24, 1, 0),
 							Position = UDim2.fromOffset(12, 0),
 							BackgroundTransparency = 1, Text = opt,
-							TextColor3 = isSel and rgb(242, 242, 248) or rgb(148, 148, 158),
+							TextColor3 = isSel and v_u_10(242, 242, 248) or v_u_10(148, 148, 158),
 							TextSize = 10,
-							Font = isSel and font.GothamSemibold or font.Gotham,
+							Font = isSel and v_u_15.GothamSemibold or v_u_15.Gotham,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 							ZIndex = 23, Parent = row,
 						})
 
-						local ob = N("TextButton", {
-							Size = udim2Scale(1, 1), BackgroundTransparency = 1,
+						local ob = v_u_54("TextButton", {
+							Size = v_u_8(1, 1), BackgroundTransparency = 1,
 							Text = "", ZIndex = 24, Parent = row,
 						})
 						ob.MouseEnter:Connect(function()
-							Tw(row, { BackgroundColor3 = isSel and BG_SEL or BG_HOV }, 0.08)
+							v_u_49(row, { BackgroundColor3 = isSel and BG_SEL or BG_HOV }, 0.08)
 						end)
 						ob.MouseLeave:Connect(function()
-							Tw(row, { BackgroundColor3 = isSel and BG_SEL or BG_IDLE }, 0.1)
+							v_u_49(row, { BackgroundColor3 = isSel and BG_SEL or BG_IDLE }, 0.1)
 						end)
 						ob.MouseButton1Down:Connect(function()
-							Tw(row, { BackgroundColor3 = rgb(20, 20, 24) }, 0.05)
+							v_u_49(row, { BackgroundColor3 = v_u_10(20, 20, 24) }, 0.05)
 						end)
 						ob.MouseButton1Click:Connect(function()
 							if not enabled then return end
 							selected = opt
 							if selLbl then
 								selLbl.Text = selected
-								selLbl.TextColor3 = T.textSec
+								selLbl.TextColor3 = v_u_64.textSec
 							end
-							SaveSet(saveId, selected)
+							v_u_48(saveId, selected)
 							buildItems()
 							local ok, err = pcall(function() if callback then callback(selected) end end)
-							if not ok then NotifyError("Dropdown", err) end
+							if not ok then v_u_58("Dropdown", err) end
 							closeDropdown()
 						end)
 					end
 				end
 				buildItems()
 
-				local togBtn = N("TextButton", {
-					Size = udim2Scale(1, 1), BackgroundTransparency = 1,
+				-- // Atualizacao em tempo real de jogadores
+				local playerAddConn, playerRemoveConn
+				if isPlayers then
+					playerAddConn = v_u_4.PlayerAdded:Connect(function(p)
+						options = v_u_61()
+						buildItems()
+					end)
+					playerRemoveConn = v_u_4.PlayerRemoving:Connect(function(p)
+						options = v_u_61()
+						if selected == p.Name then
+							selected = options[1] or ""
+							if selLbl then
+								selLbl.Text = (selected ~= "") and selected or placeholder
+								selLbl.TextColor3 = (selected ~= "") and v_u_64.textSec or v_u_64.muted
+							end
+						end
+						buildItems()
+					end)
+				end
+
+				local togBtn = v_u_54("TextButton", {
+					Size = v_u_8(1, 1), BackgroundTransparency = 1,
 					Text = "", ZIndex = 15, Parent = header,
 				})
 				togBtn.MouseButton1Click:Connect(function()
 					if not enabled then return end
 					open = not open
 					if open then
+						if isPlayers then options = v_u_61() end
 						buildItems()
 						local fH = getExpandedH()
-						Tw(panel, { Size = udim2(1, 0, 0, fH) }, 0.22, easingStyle.Quint)
-						Tw(wrap, { Size = udim2(1, 0, 0, EL_H + GAP + fH) }, 0.22, easingStyle.Quint)
-						Tw(arrowIcon, { Rotation = 180, ImageColor3 = T.white }, 0.18)
-						Tw(header, { BackgroundColor3 = T.elBgHov }, 0.12)
+						v_u_49(panel, { Size = v_u_7(1, 0, 0, fH) }, 0.22, v_u_14.Quint)
+						v_u_49(wrap, { Size = v_u_7(1, 0, 0, baseH + GAP + fH) }, 0.22, v_u_14.Quint)
+						v_u_49(arrowIcon, { Rotation = 180, ImageColor3 = v_u_64.white }, 0.18)
+						v_u_49(header, { BackgroundColor3 = v_u_64.elBgHov }, 0.12)
 					else
 						closeDropdown()
 					end
 				end)
 				togBtn.MouseEnter:Connect(function()
-					if not open and enabled then Tw(header, { BackgroundColor3 = T.elBgHov }, 0.1) end
+					if not open and enabled then v_u_49(header, { BackgroundColor3 = v_u_64.elBgHov }, 0.1) end
 				end)
 				togBtn.MouseLeave:Connect(function()
-					if not open and enabled then Tw(header, { BackgroundColor3 = T.elBg }, 0.1) end
+					if not open and enabled then v_u_49(header, { BackgroundColor3 = v_u_64.elBg }, 0.1) end
 				end)
 
-				if saveId and saveId ~= "" and SaveGet(saveId) ~= nil then
+				if saveId ~= "" and v_u_47(saveId) ~= nil then
 					pcall(function() if callback then callback(selected) end end)
 				end
 
@@ -1384,9 +1751,9 @@ function EcoHub:CreateWindow(config)
 						selected = v
 						if selLbl then
 							selLbl.Text = (v and v ~= "") and v or placeholder
-							selLbl.TextColor3 = (v and v ~= "") and T.textSec or T.muted
+							selLbl.TextColor3 = (v and v ~= "") and v_u_64.textSec or v_u_64.muted
 						end
-						SaveSet(saveId, v)
+						v_u_48(saveId, v)
 						buildItems()
 					end,
 					Get = function(_) return selected end,
@@ -1396,7 +1763,7 @@ function EcoHub:CreateWindow(config)
 							selected = options[1] or ""
 							if selLbl then
 								selLbl.Text = (selected ~= "") and selected or placeholder
-								selLbl.TextColor3 = (selected ~= "") and T.textSec or T.muted
+								selLbl.TextColor3 = (selected ~= "") and v_u_64.textSec or v_u_64.muted
 							end
 						end
 						if open then buildItems() end
@@ -1415,9 +1782,9 @@ function EcoHub:CreateWindow(config)
 									selected = options[1] or ""
 									if selLbl then
 										selLbl.Text = (selected ~= "") and selected or placeholder
-										selLbl.TextColor3 = (selected ~= "") and T.textSec or T.muted
+										selLbl.TextColor3 = (selected ~= "") and v_u_64.textSec or v_u_64.muted
 									end
-									SaveSet(saveId, selected)
+									v_u_48(saveId, selected)
 									pcall(function() if callback then callback(selected) end end)
 								end
 								if open then buildItems() end
@@ -1429,37 +1796,86 @@ function EcoHub:CreateWindow(config)
 						placeholder = tostring(txt or "")
 						if (not selected or selected == "") and selLbl then
 							selLbl.Text = placeholder
-							selLbl.TextColor3 = T.muted
+							selLbl.TextColor3 = v_u_64.muted
+						end
+					end,
+					SetDescription = function(_, v)
+						if descLbl then
+							local nd = v and v ~= ""
+							descLbl.Text = tostring(v or "")
+							descLbl.Visible = nd
+							local newH = nd and v_u_66 or v_u_65
+							baseH = newH
+							header.Size = v_u_7(1, 0, 0, newH)
+							panel.Position = v_u_7(0, 0, 0, newH + GAP)
+							if not open then
+								wrap.Size = v_u_7(1, 0, 0, newH)
+							end
 						end
 					end,
 					SetEnabled = function(_, v)
 						enabled = v ~= false
 						if not enabled and open then closeDropdown() end
-						applyDisabled(header, not enabled)
-						Tw(titleLbl, { TextColor3 = enabled and T.textPri or T.disabledTxt }, 0.15)
-						Tw(arrowIcon, { ImageColor3 = enabled and rgb(80,80,88) or T.dim }, 0.15)
+						v_u_123(header, not enabled)
+						v_u_49(titleLbl, { TextColor3 = enabled and v_u_64.textPri or v_u_64.disabledTxt }, 0.15)
+						v_u_49(arrowIcon, { ImageColor3 = enabled and v_u_10(80,80,88) or v_u_64.dim }, 0.15)
 					end,
 					SetVisible = function(_, v) if wrap then wrap.Visible = v ~= false end end,
 					SetTitle = function(_, v) if titleLbl then titleLbl.Text = tostring(v) end end,
 					SetCallback = function(_, fn) callback = fn end,
-					Destroy = function(_) pcall(function() wrap:Destroy() end) end,
+					Destroy = function(_)
+						if playerAddConn then pcall(function() playerAddConn:Disconnect() end) end
+						if playerRemoveConn then pcall(function() playerRemoveConn:Disconnect() end) end
+						pcall(function() wrap:Destroy() end)
+					end,
 				}
 			end
 
 			-- // Color Picker
-			function secApi:AddColorPicker(titulo, defaultColor, saveId, callback)
-				local currentColor = defaultColor or rgb(255, 100, 50)
+			--[[
+				cfg.Title        string   titulo exibido
+				cfg.Description  string   texto secundario abaixo do titulo (opcional)
+				cfg.Default      Color3   cor inicial
+				cfg.SaveId       string   chave de save (opcional)
+				cfg.Callback     function(color: Color3)
+
+				retorno:
+					:Set(c)              define cor (Color3) sem disparar callback
+					:Get()               retorna Color3 atual
+					:SetHex(hex)         define cor via string hex (ex: "FF6432")
+					:GetHex()            retorna hex da cor atual
+					:SetDescription(v)   altera / mostra descricao dinamicamente
+					:SetEnabled(v)       habilita/desabilita interacao
+					:SetVisible(v)       mostra/oculta elemento
+					:SetTitle(v)         altera titulo
+					:SetCallback(fn)     substitui callback
+					:Destroy()           remove elemento e desconecta eventos
+			]]
+			function v_u_120:AddColorPicker(cfg)
+				if type(cfg) == "string" then
+					cfg = { Title = cfg }
+				end
+				cfg = cfg or {}
+				local titulo = cfg.Title or "Color Picker"
+				local desc = cfg.Description or ""
+				local saveId = cfg.SaveId or ""
+				local callback = cfg.Callback
+				local currentColor = cfg.Default or v_u_10(255, 100, 50)
 				local enabled = true
 				local open = false
 
-				if saveId and saveId ~= "" then
-					local saved = SaveGet(saveId)
+				-- // Carrega cor salva corretamente
+				if saveId ~= "" then
+					local saved = v_u_47(saveId)
 					if saved ~= nil and typeof(saved) == "Color3" then
 						currentColor = saved
 					end
 				end
 
-				local hh, ss, vv = toHSV(currentColor)
+				local hh, ss, vv = v_u_12(currentColor)
+
+				local hasDesc = desc and desc ~= ""
+				local baseH = hasDesc and v_u_66 or v_u_65
 
 				local GAP = 6
 				local PAD_H = 10
@@ -1471,103 +1887,105 @@ function EcoHub:CreateWindow(config)
 				local PAD_BOT = 10
 				local PANEL_H = PAD_H + SV_H + GAP_SV + HUE_H + GAP_HUE + ROW_H + PAD_BOT
 
-				sectionOrder[side] = sectionOrder[side] + 1
-				local wrap = N("Frame", {
-					Size = udim2(1, 0, 0, EL_H),
+				v_u_110[v_u_111] = v_u_110[v_u_111] + 1
+				local wrap = v_u_54("Frame", {
+					Size = v_u_7(1, 0, 0, baseH),
 					BackgroundTransparency = 1,
 					ClipsDescendants = false,
-					LayoutOrder = sectionOrder[side],
-					ZIndex = 10, Parent = par,
+					LayoutOrder = v_u_110[v_u_111],
+					ZIndex = 10, Parent = v_u_114,
 				})
-				RegEl(wrap, titulo)
+				v_u_70(wrap, titulo)
 
-				local header = N("Frame", {
-					Size = udim2(1, 0, 0, EL_H),
-					BackgroundColor3 = T.elBg,
+				local header = v_u_54("Frame", {
+					Size = v_u_7(1, 0, 0, baseH),
+					BackgroundColor3 = v_u_64.elBg,
 					BorderSizePixel = 0, ZIndex = 11, Parent = wrap,
 				})
-				Corner(header, 7)
-				Stroke(header, T.elBorder, 1, 0.25)
+				v_u_50(header, 7)
+				v_u_52(header, v_u_64.elBorder, 1, 0.25)
 
-				local titleLbl = N("TextLabel", {
-					Size = udim2(0.5, -16, 1, 0), Position = udim2(0, 12, 0, 0),
+				local titleLbl = v_u_54("TextLabel", {
+					Size = v_u_7(0.5, -16, 0, 14),
+					Position = hasDesc and v_u_7(0, 12, 0, 8) or v_u_7(0, 12, 0.5, -7),
 					BackgroundTransparency = 1, Text = titulo,
-					TextColor3 = T.textPri, TextSize = 11, Font = font.Gotham,
+					TextColor3 = v_u_64.textPri, TextSize = 11, Font = v_u_15.Gotham,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 12, Parent = header,
 				})
+				local descLbl = hasDesc and v_u_124(header, 12, true, desc) or nil
 
-				local swatchOuter = N("Frame", {
-					Size = udim2(0, 52, 0, 20),
-					Position = udim2(1, -76, 0.5, -10),
-					BackgroundColor3 = rgb(35, 35, 40),
+				local swatchOuter = v_u_54("Frame", {
+					Size = v_u_7(0, 52, 0, 20),
+					Position = v_u_7(1, -76, 0.5, -10),
+					BackgroundColor3 = v_u_10(35, 35, 40),
 					BorderSizePixel = 0, ZIndex = 12, Parent = header,
 				})
-				Corner(swatchOuter, 5)
-				Stroke(swatchOuter, rgb(55, 55, 62), 1, 0)
-				local swatch = N("Frame", {
-					Size = udim2(1, -4, 1, -4), Position = udim2(0, 2, 0, 2),
+				v_u_50(swatchOuter, 5)
+				v_u_52(swatchOuter, v_u_10(55, 55, 62), 1, 0)
+				local swatch = v_u_54("Frame", {
+					Size = v_u_7(1, -4, 1, -4), Position = v_u_7(0, 2, 0, 2),
 					BackgroundColor3 = currentColor,
 					BorderSizePixel = 0, ZIndex = 13, Parent = swatchOuter,
 				})
-				Corner(swatch, 4)
+				v_u_50(swatch, 4)
 
-				local chevron = N("ImageLabel", {
-					Size = udim2(0, 9, 0, 9),
-					Position = udim2(1, -17, 0.5, -4.5),
+				local chevron = v_u_54("ImageLabel", {
+					Size = v_u_7(0, 9, 0, 9),
+					Position = v_u_7(1, -17, 0.5, -4.5),
 					BackgroundTransparency = 1,
-					Image = GetIcon("chevron-down"),
-					ImageColor3 = rgb(70, 70, 78), ZIndex = 13, Parent = header,
+					Image = v_u_56("chevron-down"),
+					ImageColor3 = v_u_10(70, 70, 78), ZIndex = 13, Parent = header,
 				})
 
-				local panel = N("Frame", {
-					Size = udim2(1, 0, 0, 0),
-					Position = udim2(0, 0, 0, EL_H + GAP),
-					BackgroundColor3 = rgb(18, 18, 21),
+				local panel = v_u_54("Frame", {
+					Size = v_u_7(1, 0, 0, 0),
+					Position = v_u_7(0, 0, 0, baseH + GAP),
+					BackgroundColor3 = v_u_10(18, 18, 21),
 					BorderSizePixel = 0,
 					ClipsDescendants = false,
 					ZIndex = 20, Parent = wrap,
 				})
-				Corner(panel, 8)
-				Stroke(panel, rgb(38, 38, 44), 1, 0.4)
+				v_u_50(panel, 8)
+				v_u_52(panel, v_u_10(38, 38, 44), 1, 0.4)
 
-				local content = N("Frame", {
-					Size = udim2Scale(1, 1),
+				local content = v_u_54("Frame", {
+					Size = v_u_8(1, 1),
 					BackgroundTransparency = 1,
 					ClipsDescendants = true,
 					ZIndex = 20, Parent = panel,
 				})
-				Corner(content, 8)
+				v_u_50(content, 8)
 
 				local svY = PAD_H
-				local svFrame = N("Frame", {
-					Size = udim2(1, -(PAD_H * 2), 0, SV_H),
-					Position = udim2(0, PAD_H, 0, svY),
-					BackgroundColor3 = hsv(hh, 1, 1),
+				local svFrame = v_u_54("Frame", {
+					Size = v_u_7(1, -(PAD_H * 2), 0, SV_H),
+					Position = v_u_7(0, PAD_H, 0, svY),
+					BackgroundColor3 = v_u_11(hh, 1, 1),
 					BorderSizePixel = 0,
 					ClipsDescendants = false,
 					ZIndex = 22, Parent = content,
 				})
-				Corner(svFrame, 6)
+				v_u_50(svFrame, 6)
 
-				local svW = N("Frame", {
-					Size = udim2Scale(1, 1), BackgroundColor3 = rgb(255,255,255),
+				local svW = v_u_54("Frame", {
+					Size = v_u_8(1, 1), BackgroundColor3 = v_u_10(255,255,255),
 					BorderSizePixel = 0, ZIndex = 23, Parent = svFrame,
 				})
-				Corner(svW, 6)
-				N("UIGradient", {
+				v_u_50(svW, 6)
+				v_u_54("UIGradient", {
 					Transparency = NumberSequence.new({
 						NumberSequenceKeypoint.new(0, 0),
 						NumberSequenceKeypoint.new(1, 1),
 					}), Parent = svW,
 				})
 
-				local svB = N("Frame", {
-					Size = udim2Scale(1, 1), BackgroundColor3 = rgb(0,0,0),
+				local svB = v_u_54("Frame", {
+					Size = v_u_8(1, 1), BackgroundColor3 = v_u_10(0,0,0),
 					BorderSizePixel = 0, ZIndex = 24, Parent = svFrame,
 				})
-				Corner(svB, 6)
-				N("UIGradient", {
+				v_u_50(svB, 6)
+				v_u_54("UIGradient", {
 					Transparency = NumberSequence.new({
 						NumberSequenceKeypoint.new(0, 1),
 						NumberSequenceKeypoint.new(1, 0),
@@ -1575,121 +1993,121 @@ function EcoHub:CreateWindow(config)
 				})
 
 				local SV_R = 8
-				local svCur = N("Frame", {
-					Size = udim2(0, SV_R*2, 0, SV_R*2),
+				local svCur = v_u_54("Frame", {
+					Size = v_u_7(0, SV_R*2, 0, SV_R*2),
 					AnchorPoint = Vector2.new(0.5, 0.5),
-					Position = udim2(ss, 0, 1-vv, 0),
+					Position = v_u_7(ss, 0, 1-vv, 0),
 					BackgroundColor3 = currentColor,
 					BorderSizePixel = 0, ZIndex = 28, Parent = svFrame,
 				})
-				Corner(svCur, SV_R)
-				Stroke(svCur, rgb(255,255,255), 2, 0)
+				v_u_50(svCur, SV_R)
+				v_u_52(svCur, v_u_10(255,255,255), 2, 0)
 
-				local svHit = N("TextButton", {
-					Size = udim2Scale(1, 1),
+				local svHit = v_u_54("TextButton", {
+					Size = v_u_8(1, 1),
 					BackgroundTransparency = 1, Text = "", ZIndex = 27, Parent = svFrame,
 				})
 
 				local hueY2 = svY + SV_H + GAP_SV
-				local hueFrame = N("Frame", {
-					Size = udim2(1, -(PAD_H*2), 0, HUE_H),
-					Position = udim2(0, PAD_H, 0, hueY2),
+				local hueFrame = v_u_54("Frame", {
+					Size = v_u_7(1, -(PAD_H*2), 0, HUE_H),
+					Position = v_u_7(0, PAD_H, 0, hueY2),
 					BorderSizePixel = 0,
 					ClipsDescendants = false,
 					ZIndex = 22, Parent = content,
 				})
-				Corner(hueFrame, HUE_H/2)
-				N("UIGradient", {
+				v_u_50(hueFrame, HUE_H/2)
+				v_u_54("UIGradient", {
 					Color = ColorSequence.new({
-						ColorSequenceKeypoint.new(0, rgb(255,0,0)),
-						ColorSequenceKeypoint.new(0.166, rgb(255,255,0)),
-						ColorSequenceKeypoint.new(0.333, rgb(0,255,0)),
-						ColorSequenceKeypoint.new(0.5, rgb(0,255,255)),
-						ColorSequenceKeypoint.new(0.666, rgb(0,0,255)),
-						ColorSequenceKeypoint.new(0.833, rgb(255,0,255)),
-						ColorSequenceKeypoint.new(1, rgb(255,0,0)),
+						ColorSequenceKeypoint.new(0, v_u_10(255,0,0)),
+						ColorSequenceKeypoint.new(0.166, v_u_10(255,255,0)),
+						ColorSequenceKeypoint.new(0.333, v_u_10(0,255,0)),
+						ColorSequenceKeypoint.new(0.5, v_u_10(0,255,255)),
+						ColorSequenceKeypoint.new(0.666, v_u_10(0,0,255)),
+						ColorSequenceKeypoint.new(0.833, v_u_10(255,0,255)),
+						ColorSequenceKeypoint.new(1, v_u_10(255,0,0)),
 					}), Parent = hueFrame,
 				})
 
 				local HC_W = 5
 				local HC_H = HUE_H + 6
-				local hueCur = N("Frame", {
-					Size = udim2(0, HC_W, 0, HC_H),
+				local hueCur = v_u_54("Frame", {
+					Size = v_u_7(0, HC_W, 0, HC_H),
 					AnchorPoint = Vector2.new(0.5, 0.5),
-					Position = udim2(hh, 0, 0.5, 0),
-					BackgroundColor3 = rgb(255,255,255),
+					Position = v_u_7(hh, 0, 0.5, 0),
+					BackgroundColor3 = v_u_10(255,255,255),
 					BorderSizePixel = 0, ZIndex = 26, Parent = hueFrame,
 				})
-				Corner(hueCur, 3)
-				Stroke(hueCur, rgb(15,15,18), 1.5, 0)
+				v_u_50(hueCur, 3)
+				v_u_52(hueCur, v_u_10(15,15,18), 1.5, 0)
 
-				local hueHit = N("TextButton", {
-					Size = udim2(1, 0, 1, 10),
-					Position = udim2(0, 0, 0, -5),
+				local hueHit = v_u_54("TextButton", {
+					Size = v_u_7(1, 0, 1, 10),
+					Position = v_u_7(0, 0, 0, -5),
 					BackgroundTransparency = 1, Text = "", ZIndex = 27, Parent = hueFrame,
 				})
 
 				local infoY2 = hueY2 + HUE_H + GAP_HUE
-				local infoRow = N("Frame", {
-					Size = udim2(1, -(PAD_H*2), 0, ROW_H),
-					Position = udim2(0, PAD_H, 0, infoY2),
+				local infoRow = v_u_54("Frame", {
+					Size = v_u_7(1, -(PAD_H*2), 0, ROW_H),
+					Position = v_u_7(0, PAD_H, 0, infoY2),
 					BackgroundTransparency = 1, ZIndex = 22, Parent = content,
 				})
 
-				local prevBox = N("Frame", {
-					Size = udim2(0, ROW_H, 0, ROW_H),
+				local prevBox = v_u_54("Frame", {
+					Size = v_u_7(0, ROW_H, 0, ROW_H),
 					BackgroundColor3 = currentColor,
 					BorderSizePixel = 0, ZIndex = 23, Parent = infoRow,
 				})
-				Corner(prevBox, 5)
-				Stroke(prevBox, rgb(50,50,58), 1, 0)
+				v_u_50(prevBox, 5)
+				v_u_52(prevBox, v_u_10(50,50,58), 1, 0)
 
-				local hexHolder = N("Frame", {
-					Size = udim2(0, 82, 1, 0),
-					Position = udim2(0, ROW_H+6, 0, 0),
-					BackgroundColor3 = rgb(13,13,16),
+				local hexHolder = v_u_54("Frame", {
+					Size = v_u_7(0, 82, 1, 0),
+					Position = v_u_7(0, ROW_H+6, 0, 0),
+					BackgroundColor3 = v_u_10(13,13,16),
 					BorderSizePixel = 0, ZIndex = 23, Parent = infoRow,
 				})
-				Corner(hexHolder, 5)
-				Stroke(hexHolder, T.elBorder, 1, 0.35)
-				N("TextLabel", {
-					Size = udim2(0, 16, 1, 0), Position = udim2(0, 5, 0, 0),
+				v_u_50(hexHolder, 5)
+				v_u_52(hexHolder, v_u_64.elBorder, 1, 0.35)
+				v_u_54("TextLabel", {
+					Size = v_u_7(0, 16, 1, 0), Position = v_u_7(0, 5, 0, 0),
 					BackgroundTransparency = 1, Text = "#",
-					TextColor3 = T.muted, TextSize = 9, Font = font.GothamBold,
+					TextColor3 = v_u_64.muted, TextSize = 9, Font = v_u_15.GothamBold,
 					TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 24, Parent = hexHolder,
 				})
-				local hexBox = N("TextBox", {
-					Size = udim2(1, -20, 1, 0),
-					Position = udim2(0, 20, 0, 0),
+				local hexBox = v_u_54("TextBox", {
+					Size = v_u_7(1, -20, 1, 0),
+					Position = v_u_7(0, 20, 0, 0),
 					BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 24,
-					Text = ColorToHex(currentColor),
-					TextColor3 = T.textPri,
-					PlaceholderText = "FFFFFF", PlaceholderColor3 = T.muted,
-					TextSize = 9, Font = font.Code,
+					Text = v_u_59(currentColor),
+					TextColor3 = v_u_64.textPri,
+					PlaceholderText = "FFFFFF", PlaceholderColor3 = v_u_64.muted,
+					TextSize = 9, Font = v_u_15.Code,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					ClearTextOnFocus = false, Parent = hexHolder,
 				})
 
-				local function mkRGB(lbl, xOff)
-					local blk = N("Frame", {
-						Size = udim2(0, 40, 1, 0),
-						Position = udim2(0, xOff, 0, 0),
-						BackgroundColor3 = rgb(13,13,16),
+				local function mkRGB(lbl2, xOff)
+					local blk = v_u_54("Frame", {
+						Size = v_u_7(0, 40, 1, 0),
+						Position = v_u_7(0, xOff, 0, 0),
+						BackgroundColor3 = v_u_10(13,13,16),
 						BorderSizePixel = 0, ZIndex = 23, Parent = infoRow,
 					})
-					Corner(blk, 5)
-					Stroke(blk, T.elBorder, 1, 0.35)
-					N("TextLabel", {
-						Size = udim2(0, 12, 1, 0), Position = udim2(0, 4, 0, 0),
-						BackgroundTransparency = 1, Text = lbl,
-						TextColor3 = T.muted, TextSize = 7, Font = font.GothamBold,
+					v_u_50(blk, 5)
+					v_u_52(blk, v_u_64.elBorder, 1, 0.35)
+					v_u_54("TextLabel", {
+						Size = v_u_7(0, 12, 1, 0), Position = v_u_7(0, 4, 0, 0),
+						BackgroundTransparency = 1, Text = lbl2,
+						TextColor3 = v_u_64.muted, TextSize = 7, Font = v_u_15.GothamBold,
 						TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 24, Parent = blk,
 					})
-					local nl = N("TextLabel", {
-						Size = udim2(1, -16, 1, 0),
-						Position = udim2(0, 16, 0, 0),
+					local nl = v_u_54("TextLabel", {
+						Size = v_u_7(1, -16, 1, 0),
+						Position = v_u_7(0, 16, 0, 0),
 						BackgroundTransparency = 1, Text = "255",
-						TextColor3 = T.textSec, TextSize = 8, Font = font.Code,
+						TextColor3 = v_u_64.textSec, TextSize = 8, Font = v_u_15.Code,
 						TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 24, Parent = blk,
 					})
 					return nl
@@ -1699,28 +2117,32 @@ function EcoHub:CreateWindow(config)
 				local gLbl = mkRGB("G", baseRX + 46)
 				local bLbl = mkRGB("B", baseRX + 92)
 
+				local _hexFocused = false
+
 				local function updateAll(fireCallback)
-					currentColor = hsv(hh, ss, vv)
+					currentColor = v_u_11(hh, ss, vv)
 
 					swatch.BackgroundColor3 = currentColor
 					prevBox.BackgroundColor3 = currentColor
-					svFrame.BackgroundColor3 = hsv(hh, 1, 1)
+					svFrame.BackgroundColor3 = v_u_11(hh, 1, 1)
 
-					svCur.Position = udim2(ss, 0, 1-vv, 0)
+					svCur.Position = v_u_7(ss, 0, 1-vv, 0)
 					svCur.BackgroundColor3 = currentColor
-					hueCur.Position = udim2(hh, 0, 0.5, 0)
+					hueCur.Position = v_u_7(hh, 0, 0.5, 0)
 
-					local hexStr = ColorToHex(currentColor)
-					if not hexBox:IsFocused() then hexBox.Text = hexStr end
+					local hexStr = v_u_59(currentColor)
+					if not _hexFocused then hexBox.Text = hexStr end
 
-					if rLbl then rLbl.Text = tostring(round(currentColor.R*255)) end
-					if gLbl then gLbl.Text = tostring(round(currentColor.G*255)) end
-					if bLbl then bLbl.Text = tostring(round(currentColor.B*255)) end
+					if rLbl then rLbl.Text = tostring(v_u_17(currentColor.R*255)) end
+					if gLbl then gLbl.Text = tostring(v_u_17(currentColor.G*255)) end
+					if bLbl then bLbl.Text = tostring(v_u_17(currentColor.B*255)) end
 
-					SaveSet(saveId, currentColor)
+					-- // Salva cor imediatamente
+					v_u_48(saveId, currentColor)
+
 					if fireCallback then
 						local ok, err = pcall(function() if callback then callback(currentColor) end end)
-						if not ok then NotifyError("ColorPicker", err) end
+						if not ok then v_u_58("ColorPicker", err) end
 					end
 				end
 
@@ -1734,8 +2156,8 @@ function EcoHub:CreateWindow(config)
 					local ab = svFrame.AbsolutePosition
 					local sz = svFrame.AbsoluteSize
 					if sz.X <= 0 or sz.Y <= 0 then return end
-					ss = clamp((x - ab.X) / sz.X, 0, 1)
-					vv = 1 - clamp((y - ab.Y) / sz.Y, 0, 1)
+					ss = v_u_16((x - ab.X) / sz.X, 0, 1)
+					vv = 1 - v_u_16((y - ab.Y) / sz.Y, 0, 1)
 					updateAll(true)
 				end
 
@@ -1744,7 +2166,7 @@ function EcoHub:CreateWindow(config)
 					local ab = hueFrame.AbsolutePosition
 					local sz = hueFrame.AbsoluteSize
 					if sz.X <= 0 then return end
-					hh = clamp((x - ab.X) / sz.X, 0, 1)
+					hh = v_u_16((x - ab.X) / sz.X, 0, 1)
 					updateAll(true)
 				end
 
@@ -1764,7 +2186,7 @@ function EcoHub:CreateWindow(config)
 					sampleHue(inp.Position.X)
 				end)
 
-				local cpMoveConn = UserInputService.InputChanged:Connect(function(inp)
+				local cpMoveConn = v_u_2.InputChanged:Connect(function(inp)
 					if not enabled then return end
 					if inp.UserInputType ~= Enum.UserInputType.MouseMovement
 						and inp.UserInputType ~= Enum.UserInputType.Touch then return end
@@ -1772,7 +2194,7 @@ function EcoHub:CreateWindow(config)
 					if hueDrag then sampleHue(inp.Position.X) end
 				end)
 
-				local cpEndConn = UserInputService.InputEnded:Connect(function(inp)
+				local cpEndConn = v_u_2.InputEnded:Connect(function(inp)
 					if inp.UserInputType == Enum.UserInputType.MouseButton1
 						or inp.UserInputType == Enum.UserInputType.Touch then
 						svDrag = false
@@ -1780,50 +2202,55 @@ function EcoHub:CreateWindow(config)
 					end
 				end)
 
+				hexBox.Focused:Connect(function()
+					_hexFocused = true
+				end)
+
 				hexBox.FocusLost:Connect(function()
+					_hexFocused = false
 					if not enabled then return end
-					local c = HexToColor(hexBox.Text)
+					local c = v_u_60(hexBox.Text)
 					if c then
 						currentColor = c
-						hh, ss, vv = toHSV(c)
+						hh, ss, vv = v_u_12(c)
 						updateAll(true)
 					else
-						hexBox.Text = ColorToHex(currentColor)
+						hexBox.Text = v_u_59(currentColor)
 					end
 				end)
 
 				local function closeCP()
 					open = false
-					Tw(panel, { Size = udim2(1, 0, 0, 0) }, 0.2, easingStyle.Quint)
-					Tw(wrap, { Size = udim2(1, 0, 0, EL_H) }, 0.2, easingStyle.Quint)
-					Tw(chevron, { Rotation = 0, ImageColor3 = rgb(70,70,78) }, 0.15)
-					Tw(header, { BackgroundColor3 = T.elBg }, 0.14)
+					v_u_49(panel, { Size = v_u_7(1, 0, 0, 0) }, 0.2, v_u_14.Quint)
+					v_u_49(wrap, { Size = v_u_7(1, 0, 0, baseH) }, 0.2, v_u_14.Quint)
+					v_u_49(chevron, { Rotation = 0, ImageColor3 = v_u_10(70,70,78) }, 0.15)
+					v_u_49(header, { BackgroundColor3 = v_u_64.elBg }, 0.14)
 				end
 
-				local togBtn = N("TextButton", {
-					Size = udim2Scale(1, 1),
+				local togBtn = v_u_54("TextButton", {
+					Size = v_u_8(1, 1),
 					BackgroundTransparency = 1, Text = "", ZIndex = 15, Parent = header,
 				})
 				togBtn.MouseButton1Click:Connect(function()
 					if not enabled then return end
 					open = not open
 					if open then
-						Tw(panel, { Size = udim2(1, 0, 0, PANEL_H) }, 0.22, easingStyle.Quint)
-						Tw(wrap, { Size = udim2(1, 0, 0, EL_H+GAP+PANEL_H) }, 0.22, easingStyle.Quint)
-						Tw(chevron, { Rotation = 180, ImageColor3 = T.white }, 0.18)
-						Tw(header, { BackgroundColor3 = T.elBgHov }, 0.12)
+						v_u_49(panel, { Size = v_u_7(1, 0, 0, PANEL_H) }, 0.22, v_u_14.Quint)
+						v_u_49(wrap, { Size = v_u_7(1, 0, 0, baseH+GAP+PANEL_H) }, 0.22, v_u_14.Quint)
+						v_u_49(chevron, { Rotation = 180, ImageColor3 = v_u_64.white }, 0.18)
+						v_u_49(header, { BackgroundColor3 = v_u_64.elBgHov }, 0.12)
 					else
 						closeCP()
 					end
 				end)
 				togBtn.MouseEnter:Connect(function()
-					if not open and enabled then Tw(header, { BackgroundColor3 = T.elBgHov }, 0.1) end
+					if not open and enabled then v_u_49(header, { BackgroundColor3 = v_u_64.elBgHov }, 0.1) end
 				end)
 				togBtn.MouseLeave:Connect(function()
-					if not open and enabled then Tw(header, { BackgroundColor3 = T.elBg }, 0.1) end
+					if not open and enabled then v_u_49(header, { BackgroundColor3 = v_u_64.elBg }, 0.1) end
 				end)
 
-				if saveId and saveId ~= "" and SaveGet(saveId) ~= nil then
+				if saveId ~= "" and v_u_47(saveId) ~= nil then
 					pcall(function() if callback then callback(currentColor) end end)
 				end
 
@@ -1831,25 +2258,39 @@ function EcoHub:CreateWindow(config)
 					Set = function(_, c)
 						if typeof(c) ~= "Color3" then return end
 						currentColor = c
-						hh, ss, vv = toHSV(c)
+						hh, ss, vv = v_u_12(c)
 						updateAll(false)
-						SaveSet(saveId, c)
+						v_u_48(saveId, c)
 					end,
 					Get = function(_) return currentColor end,
 					SetHex = function(_, hexStr)
-						local c = HexToColor(tostring(hexStr or ""))
+						local c = v_u_60(tostring(hexStr or ""))
 						if c then
 							currentColor = c
-							hh, ss, vv = toHSV(c)
+							hh, ss, vv = v_u_12(c)
 							updateAll(false)
-							SaveSet(saveId, c)
+							v_u_48(saveId, c)
 						end
 					end,
-					GetHex = function(_) return ColorToHex(currentColor) end,
+					GetHex = function(_) return v_u_59(currentColor) end,
+					SetDescription = function(_, v)
+						if descLbl then
+							local nd = v and v ~= ""
+							descLbl.Text = tostring(v or "")
+							descLbl.Visible = nd
+							local newH = nd and v_u_66 or v_u_65
+							baseH = newH
+							header.Size = v_u_7(1, 0, 0, newH)
+							panel.Position = v_u_7(0, 0, 0, newH + GAP)
+							if not open then
+								wrap.Size = v_u_7(1, 0, 0, newH)
+							end
+						end
+					end,
 					SetEnabled = function(_, val2)
 						enabled = val2 ~= false
 						if not enabled and open then closeCP() end
-						applyDisabled(header, not enabled)
+						v_u_123(header, not enabled)
 						svDrag = false
 						hueDrag = false
 					end,
@@ -1866,72 +2307,72 @@ function EcoHub:CreateWindow(config)
 				}
 			end
 
-			local sectionHandle = setmetatable({}, { __index = secApi })
+			local v_u_125 = setmetatable({}, { __index = v_u_120 })
 
-			function sectionHandle:SetTitle(newText)
-				if secTitleLbl then
-					secTitleLbl.Text = string.upper(tostring(newText or ""))
+			function v_u_125:SetTitle(newText)
+				if v_u_119 then
+					v_u_119.Text = string.upper(tostring(newText or ""))
 				end
 			end
 
-			function sectionHandle:SetVisible(v)
-				if wrap then wrap.Visible = v ~= false end
+			function v_u_125:SetVisible(v)
+				if v_u_115 then v_u_115.Visible = v ~= false end
 			end
 
-			function sectionHandle:Destroy()
-				pcall(function() wrap:Destroy() end)
+			function v_u_125:Destroy()
+				pcall(function() v_u_115:Destroy() end)
 			end
 
-			return sectionHandle
+			return v_u_125
 		end
 
-		return tabApi
+		return v_u_109
 	end
 
-	-- // Sistema de Minimização
-	local MinQuad = N("ImageButton", {
-		Name = "MinQuad", Parent = ScreenGui,
-		BackgroundColor3 = rgb(18, 18, 18),
-		Position = udim2(1, -60, 1, -60), Size = udim2(0, 44, 0, 44),
+	-- // Sistema de Minimizacao
+	local v_u_126 = v_u_54("ImageButton", {
+		Name = "MinQuad", Parent = v_u_74,
+		BackgroundColor3 = v_u_10(18, 18, 18),
+		Position = v_u_7(1, -60, 1, -60), Size = v_u_7(0, 44, 0, 44),
 		BorderSizePixel = 0, Image = "",
-		ImageTransparency = 0.35, ImageColor3 = rgb(180, 180, 180),
+		ImageTransparency = 0.35, ImageColor3 = v_u_10(180, 180, 180),
 		Active = true, Draggable = true, Visible = false,
 	})
-	Corner(MinQuad, 8)
-	Stroke(MinQuad, rgb(60, 60, 65), 1.2)
+	v_u_50(v_u_126, 8)
+	v_u_52(v_u_126, v_u_10(60, 60, 65), 1.2)
 
-	local _mqDragged = false
-	local _mqDragStart = nil
+	local v_u_127 = false
+	local v_u_128 = nil
 
-	MinQuad.InputBegan:Connect(function(inp)
+	v_u_126.InputBegan:Connect(function(inp)
 		if inp.UserInputType == Enum.UserInputType.MouseButton1 then
-			_mqDragged = false
-			_mqDragStart = inp.Position
+			v_u_127 = false
+			v_u_128 = inp.Position
 		end
 	end)
-	MinQuad.InputChanged:Connect(function(inp)
-		if inp.UserInputType == Enum.UserInputType.MouseMovement and _mqDragStart then
-			if (inp.Position - _mqDragStart).Magnitude > 4 then _mqDragged = true end
+	v_u_126.InputChanged:Connect(function(inp)
+		if inp.UserInputType == Enum.UserInputType.MouseMovement and v_u_128 then
+			if (inp.Position - v_u_128).Magnitude > 4 then v_u_127 = true end
 		end
 	end)
-	MinQuad.MouseButton1Up:Connect(function()
-		if not _mqDragged then
-			MinQuad.Visible = false
-			MainFrame.Visible = true
-			MainFrame.Size = udim2(0, WIN_W, 0, 0)
-			Tw(MainFrame, { Size = udim2(0, WIN_W, 0, WIN_H) }, 0.25, easingStyle.Quint)
+	v_u_126.MouseButton1Up:Connect(function()
+		if not v_u_127 then
+			v_u_126.Visible = false
+			v_u_75.Visible = true
+			v_u_75.Size = v_u_7(0, v_u_67, 0, 0)
+			v_u_49(v_u_75, { Size = v_u_7(0, v_u_67, 0, v_u_68) }, 0.25, v_u_14.Quint)
 		end
 	end)
 
-	MoveBtn.MouseButton1Click:Connect(function()
-		Tw(MainFrame, { Size = udim2(0, WIN_W, 0, 0) }, 0.2, easingStyle.Quint)
+	v_u_81.MouseButton1Click:Connect(function()
+		v_u_49(v_u_75, { Size = v_u_7(0, v_u_67, 0, 0) }, 0.2, v_u_14.Quint)
 		task.delay(0.22, function()
-			MainFrame.Visible = false
-			MinQuad.Visible = true
+			v_u_75.Visible = false
+			v_u_126.Visible = true
 		end)
 	end)
 
-	return winApi
+	return v_u_94
 end
 
 return EcoHub
