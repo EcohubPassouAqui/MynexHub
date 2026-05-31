@@ -1,6 +1,4 @@
 -- // EcoHub UI Library
--- // Versao 2.0 - Melhorado
-
 local v_u_1 = game:GetService("TweenService")
 local v_u_2 = game:GetService("UserInputService")
 local v_u_3 = game:GetService("RunService")
